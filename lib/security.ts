@@ -1,8 +1,8 @@
-import { NextRequest } from 'next/server';
+﻿import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 const stateSchema = z
-  .string({ required_error: 'State is required' })
+  .string({ message: 'State is required' })
   .trim()
   .transform((value) => value.toUpperCase())
   .refine((value) => /^[A-Z]{2}$/.test(value), {
