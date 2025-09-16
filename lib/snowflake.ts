@@ -36,11 +36,13 @@ export async function runSnowflakeQuery<T extends SnowflakeRow = SnowflakeRow>(
     password: process.env.SNOWFLAKE_PASSWORD!,
   };
 
+  const mutableConfig = connectionConfig as unknown as Record<string, string | undefined>;
+
   for (const key of Object.keys(OPTIONAL_ENV_MAP) as Array<keyof typeof OPTIONAL_ENV_MAP>) {
     const value = process.env[key];
     const optionKey = OPTIONAL_ENV_MAP[key];
     if (value && optionKey) {
-      (connectionConfig as Record<string, string | undefined>)[optionKey] = value;
+      mutableConfig[optionKey] = value;
     }
   }
 
