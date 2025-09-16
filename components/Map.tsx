@@ -10,6 +10,8 @@ import type { ClinicFeature } from '@/types/clinics';
 
 import 'leaflet/dist/leaflet.css';
 
+ type ClusterIconTarget = { getChildCount: () => number };
+
 type MapProps = {
   clinics: ClinicFeature[];
   selectedClinic: ClinicFeature | null;
@@ -52,7 +54,7 @@ export function Map({ clinics, selectedClinic, onSelectClinic, radiusMeters }: M
           zoomToBoundsOnClick
           maxClusterRadius={52}
           polygonOptions={{ opacity: 0, color: 'transparent' }}
-          iconCreateFunction={(cluster) => createClusterIcon(cluster.getChildCount(), zoom)}
+          iconCreateFunction={(cluster: ClusterIconTarget) => createClusterIcon(cluster.getChildCount(), zoom)}
         >
           {clinics.map((clinic) => {
             const identifier = identifyClinic(clinic);
@@ -247,5 +249,7 @@ function formatRate(value: number | null): string {
   }
   return `${value.toFixed(1)}%`;
 }
+
+
 
 
