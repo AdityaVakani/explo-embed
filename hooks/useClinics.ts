@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { ClinicFeature, ClinicFeatureCollection } from '@/types/clinics';
 
-type ClinicsResponse = ClinicFeatureCollection | { error?: string } | Record<string, unknown>;
+type ClinicsResponse = ClinicFeatureCollection | { error?: unknown } | Record<string, unknown>;
 
 function extractFeatures(payload: ClinicsResponse): ClinicFeature[] {
   if (payload && typeof payload === 'object' && 'features' in payload) {
@@ -54,10 +54,10 @@ export function useClinics(state: string | null) {
 
         if (!response.ok) {
           const message =
-            payload && typeof payload === 'object' && 'error' in payload && payload.error
+            payload && typeof payload === 'object' && 'error' in payload && typeof payload.error === 'string'
               ? payload.error
               : `Request failed with status ${response.status}`;
-          throw new Error(message ?? 'Request failed');
+          throw new Error(message);
         }
 
         if (!isActive) {
