@@ -30,21 +30,23 @@ export async function runSnowflakeQuery<T extends SnowflakeRow = SnowflakeRow>(
 ): Promise<T[]> {
   assertEnv();
 
-  const connectionConfig: Record<string, unknown> = {
+  const connectionConfig: snowflake.ConnectionOptions = {
     account: process.env.SNOWFLAKE_ACCOUNT!,
     username: process.env.SNOWFLAKE_USERNAME!,
     password: process.env.SNOWFLAKE_PASSWORD!,
   };
 
+  const mutableConfig = connectionConfig as Record<string, string | undefined>;
+
   for (const key of Object.keys(OPTIONAL_ENV_MAP) as Array<keyof typeof OPTIONAL_ENV_MAP>) {
     const value = process.env[key];
     const optionKey = OPTIONAL_ENV_MAP[key];
     if (value && optionKey) {
-      connectionConfig[optionKey] = value;
+      mutableConfig[optionKey] = value;
     }
   }
 
-  const connection = snowflake.createConnection(connectionConfig as snowflake.ConnectionOptions);
+  const connection = snowflake.createConnection(connectionConfig);
 
   await connect(connection);
 
