@@ -17,6 +17,8 @@ type SnowflakeRow = Record<string, unknown>;
 
 type BindParams = unknown;
 
+type StatementOptions = Parameters<snowflake.Connection['execute']>[0];
+
 function assertEnv(): void {
   const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
   if (missing.length) {
@@ -87,7 +89,7 @@ function execute<T>(
   binds: BindParams,
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
-    const options: snowflake.StatementOptions = {
+    const options: StatementOptions = {
       sqlText,
       complete(error, _statement, rows) {
         if (error) {
