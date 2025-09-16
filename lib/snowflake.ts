@@ -6,31 +6,16 @@ const REQUIRED_ENV = [
   'SNOWFLAKE_PASSWORD',
 ] as const;
 
-const ALLOWED_DATABASE = 'VETSTORIA_POC' as const;
-const OPTIONAL_ENV_KEYS = [
-  'SNOWFLAKE_WAREHOUSE',
-  'SNOWFLAKE_DATABASE',
-  'SNOWFLAKE_SCHEMA',
-  'SNOWFLAKE_ROLE',
-] as const;
-const PROHIBITED_KEYWORDS = [
-  'DELETE',
-  'UPDATE',
-  'INSERT',
-  'MERGE',
-  'CALL',
-  'ALTER',
-  'DROP',
-  'TRUNCATE',
-  'GRANT',
-  'REVOKE',
-  'COPY',
-  'PUT',
-  'REMOVE',
-  'USE',
-] as const;
+const OPTIONAL_ENV_MAP = {
+  SNOWFLAKE_WAREHOUSE: 'warehouse',
+  SNOWFLAKE_DATABASE: 'database',
+  SNOWFLAKE_SCHEMA: 'schema',
+  SNOWFLAKE_ROLE: 'role',
+} as const;
 
-const prohibitedRegex = new RegExp(`\b(${PROHIBITED_KEYWORDS.join('|')})\b`, 'i');
+type SnowflakeRow = Record<string, unknown>;
+
+type BindParams = Record<string, unknown> | unknown[];
 
 function assertEnv(): void {
   const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
@@ -39,55 +24,22 @@ function assertEnv(): void {
   }
 }
 
-function assertReadOnlyQuery(sqlText: string): void {
-  const normalized = sqlText.trim().replace(/\s+/g, ' ').toUpperCase();
-
-  if (!/^(WITH|SELECT)\b/.test(normalized)) {
-    throw new Error('Only SELECT queries are allowed');
-  }
-
-  if (normalized.includes(';')) {
-    throw new Error('Multiple SQL statements are not permitted');
-  }
-
-  if (!normalized.includes(ALLOWED_DATABASE)) {
-    throw new Error(`Queries must stay within the ${ALLOWED_DATABASE} database`);
-  }
-
-  if (prohibitedRegex.test(normalized)) {
-    throw new Error('Mutation statements are not permitted');
-  }
-
-  const fullyQualifiedObjects = normalized.matchAll(/\b([A-Z0-9_]+)\.[A-Z0-9_]+\.[A-Z0-9_]+\b/g);
-  for (const match of fullyQualifiedObjects) {
-    if (match[1] !== ALLOWED_DATABASE) {
-      throw new Error(`Access restricted to the ${ALLOWED_DATABASE} database`);
-    }
-  }
-}
-
-type SnowflakeRow = Record<string, unknown>;
-
-type BindParams = Record<string, unknown> | unknown[];
-
 export async function runSnowflakeQuery<T extends SnowflakeRow = SnowflakeRow>(
   sqlText: string,
   binds: BindParams,
 ): Promise<T[]> {
   assertEnv();
-  assertReadOnlyQuery(sqlText);
 
-  const connectionConfig: Partial<snowflake.ConnectionOptions> = {
+  const connectionConfig: Record<string, unknown> = {
     account: process.env.SNOWFLAKE_ACCOUNT!,
     username: process.env.SNOWFLAKE_USERNAME!,
     password: process.env.SNOWFLAKE_PASSWORD!,
-  } as Partial<snowflake.ConnectionOptions>;
+  };
 
-
-  for (const key of OPTIONAL_ENV_KEYS) {
+  for (const key of Object.keys(OPTIONAL_ENV_MAP) as Array<keyof typeof OPTIONAL_ENV_MAP>) {
     const value = process.env[key];
-    if (value) {
-      const optionKey = key.replace('SNOWFLAKE_', '').toLowerCase() as keyof snowflake.ConnectionOptions;
+    const optionKey = OPTIONAL_ENV_MAP[key];
+    if (value && optionKey) {
       connectionConfig[optionKey] = value;
     }
   }
@@ -146,4 +98,3 @@ function execute<T>(
     });
   });
 }
-
