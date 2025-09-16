@@ -39,7 +39,6 @@ export function Map({ clinics, selectedClinic, onSelectClinic, radiusMeters }: M
         preferCanvas
         zoomAnimation
         fadeAnimation={false}
-        wheelPxPerZoom={80}
         updateWhenIdle
         className="h-full w-full text-slate-900"
         style={{ height: '100%', width: '100%', borderRadius: '0.75rem' }}
@@ -249,3 +248,4 @@ function formatRate(value: number | null): string {
   }
   return `${value.toFixed(1)}%`;
 }
+
