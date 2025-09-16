@@ -1,7 +1,27 @@
-﻿const allowedHosts = (process.env.ALLOWED_EMBED_HOSTNAMES ?? '')
+const rawAllowedHosts = process.env.ALLOWED_EMBED_HOSTNAMES ?? '';
+
+function normalizeHost(entry) {
+  if (!entry) return null;
+  const unquoted = entry.trim().replace(/^['"]+|['"]+$/g, '');
+  if (!unquoted) return null;
+  const lowered = unquoted.toLowerCase();
+  if (lowered.includes('*')) {
+    return lowered;
+  }
+  if (lowered.includes('://')) {
+    try {
+      return new URL(lowered).host.toLowerCase();
+    } catch {
+      return lowered;
+    }
+  }
+  return lowered;
+}
+
+const allowedHosts = rawAllowedHosts
   .split(/\s+/)
-  .map((value) => value.trim())
-  .filter(Boolean);
+  .map((value) => normalizeHost(value))
+  .filter((value) => value);
 
 function withHttpsPrefix(host) {
   if (!host) return host;
@@ -57,4 +77,3 @@ const nextConfig = {
 };
 
 export default nextConfig;
-

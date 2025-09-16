@@ -1,4 +1,4 @@
-﻿import { NextRequest } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 const stateSchema = z
@@ -39,28 +39,29 @@ function parseHost(value: string | null): string | null {
 }
 
 function normalizeAllowedEntry(entry: string): string | null {
-  const trimmed = entry.trim().toLowerCase();
-  if (!trimmed) {
+  const unquoted = entry.trim().replace(/^['"]+|['"]+$/g, '');
+  const lowered = unquoted.toLowerCase();
+  if (!lowered) {
     return null;
   }
-  if (trimmed.includes('*')) {
-    return trimmed;
+  if (lowered.includes('*')) {
+    return lowered;
   }
-  if (trimmed.includes('://')) {
+  if (lowered.includes('://')) {
     try {
-      return new URL(trimmed).host.toLowerCase();
+      return new URL(lowered).host.toLowerCase();
     } catch {
-      return trimmed;
+      return lowered;
     }
   }
-  return trimmed;
+  return lowered;
 }
 
 function getAllowList(): string[] {
   const raw = process.env.ALLOWED_EMBED_HOSTNAMES ?? '';
   return raw
     .split(/\s+/)
-    .map(normalizeAllowedEntry)
+    .map((entry) => normalizeAllowedEntry(entry))
     .filter((value): value is string => Boolean(value));
 }
 
