@@ -4,6 +4,18 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { ClinicFeature, ClinicFeatureCollection } from '@/types/clinics';
 
+type ClinicsResponse = ClinicFeatureCollection | { error?: string } | Record<string, unknown>;
+
+function extractFeatures(payload: ClinicsResponse): ClinicFeature[] {
+  if (payload && typeof payload === 'object' && 'features' in payload) {
+    const { features } = payload as Partial<ClinicFeatureCollection>;
+    if (Array.isArray(features)) {
+      return features;
+    }
+  }
+  return [];
+}
+
 export function useClinics(state: string | null) {
   const [clinics, setClinics] = useState<ClinicFeature[]>([]);
   const [loading, setLoading] = useState(false);
@@ -38,24 +50,21 @@ export function useClinics(state: string | null) {
           },
         });
 
-        const payload = (await response.json().catch(() => ({}))) as
-          | ClinicFeatureCollection
-          | { error?: string };
+        const payload = (await response.json().catch(() => ({}))) as ClinicsResponse;
 
         if (!response.ok) {
           const message =
-            typeof payload === 'object' && payload && 'error' in payload && payload.error
+            payload && typeof payload === 'object' && 'error' in payload && payload.error
               ? payload.error
               : `Request failed with status ${response.status}`;
-          throw new Error(message);
+          throw new Error(message ?? 'Request failed');
         }
 
         if (!isActive) {
           return;
         }
 
-        const features = Array.isArray(payload.features) ? payload.features : [];
-        setClinics(features);
+        setClinics(extractFeatures(payload));
       } catch (cause) {
         if (controller.signal.aborted || !isActive) {
           return;
