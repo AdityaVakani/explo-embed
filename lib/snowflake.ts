@@ -81,7 +81,8 @@ export async function runSnowflakeQuery<T extends SnowflakeRow = SnowflakeRow>(
     account: process.env.SNOWFLAKE_ACCOUNT!,
     username: process.env.SNOWFLAKE_USERNAME!,
     password: process.env.SNOWFLAKE_PASSWORD!,
-  };
+  } as Partial<snowflake.ConnectionOptions>;
+
 
   for (const key of OPTIONAL_ENV_KEYS) {
     const value = process.env[key];
@@ -145,3 +146,4 @@ function execute<T>(
     });
   });
 }
+
