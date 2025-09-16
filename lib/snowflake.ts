@@ -15,7 +15,7 @@ const OPTIONAL_ENV_MAP = {
 
 type SnowflakeRow = Record<string, unknown>;
 
-type BindParams = Record<string, unknown> | unknown[];
+type BindParams = unknown;
 
 function assertEnv(): void {
   const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
@@ -87,9 +87,8 @@ function execute<T>(
   binds: BindParams,
 ): Promise<T[]> {
   return new Promise((resolve, reject) => {
-    connection.execute({
+    const options: snowflake.StatementOptions = {
       sqlText,
-      binds,
       complete(error, _statement, rows) {
         if (error) {
           reject(error);
@@ -97,6 +96,12 @@ function execute<T>(
         }
         resolve((rows ?? []) as T[]);
       },
-    });
+    };
+
+    if (binds !== undefined) {
+      (options as unknown as { binds: unknown }).binds = binds;
+    }
+
+    connection.execute(options);
   });
 }
