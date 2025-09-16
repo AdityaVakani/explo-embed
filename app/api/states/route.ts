@@ -20,7 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const ip = request.ip ?? getClientIp(request.headers);
+  const ip = getClientIp(request.headers);
   if (!rateLimit(ip)) {
     return NextResponse.json(
       { error: 'Too Many Requests' },
@@ -45,3 +45,4 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
