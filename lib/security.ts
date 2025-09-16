@@ -38,12 +38,30 @@ function parseHost(value: string | null): string | null {
   }
 }
 
+function normalizeAllowedEntry(entry: string): string | null {
+  const trimmed = entry.trim().toLowerCase();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed.includes('*')) {
+    return trimmed;
+  }
+  if (trimmed.includes('://')) {
+    try {
+      return new URL(trimmed).host.toLowerCase();
+    } catch {
+      return trimmed;
+    }
+  }
+  return trimmed;
+}
+
 function getAllowList(): string[] {
   const raw = process.env.ALLOWED_EMBED_HOSTNAMES ?? '';
   return raw
     .split(/\s+/)
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean);
+    .map(normalizeAllowedEntry)
+    .filter((value): value is string => Boolean(value));
 }
 
 export function sanitizeState(value: string | null | undefined): string {
