@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Circle, MapContainer, Marker, Popup, TileLayer, useMapEvent } from 'react-leaflet';
+import { Circle, MapContainer, Marker, Popup, TileLayer, useMap, useMapEvent } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 
@@ -10,12 +10,17 @@ import type { ClinicFeature } from '@/types/clinics';
 
 import 'leaflet/dist/leaflet.css';
 
- type ClusterIconTarget = { getChildCount: () => number };
+type ClusterIconTarget = { getChildCount: () => number };
+
+type FocusTarget =
+  | { type: 'clinic'; clinic: ClinicFeature }
+  | { type: 'bounds'; bounds: [[number, number], [number, number]] };
 
 type MapProps = {
   clinics: ClinicFeature[];
   selectedClinic: ClinicFeature | null;
   onSelectClinic: (clinic: ClinicFeature) => void;
+  focus: FocusTarget | null;
   radiusMeters?: number;
 };
 
@@ -28,7 +33,7 @@ const TILE_LAYER_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r
 const TILE_ATTRIBUTION =
   "&copy; <a href='https://carto.com/attributions'>CARTO</a> | &copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors";
 
-export function Map({ clinics, selectedClinic, onSelectClinic, radiusMeters }: MapProps) {
+export function Map({ clinics, selectedClinic, onSelectClinic, focus, radiusMeters }: MapProps) {
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
 
   return (
@@ -47,6 +52,7 @@ export function Map({ clinics, selectedClinic, onSelectClinic, radiusMeters }: M
       >
         <TileLayer attribution={TILE_ATTRIBUTION} url={TILE_LAYER_URL} subdomains={['a', 'b', 'c', 'd']} />
         <ZoomTracker onZoomChange={setZoom} />
+        <ViewportController focus={focus} />
         <MarkerClusterGroup
           chunkedLoading
           spiderfyOnMaxZoom
@@ -226,6 +232,39 @@ function createClusterIcon(pointCount: number, zoom: number) {
   });
 }
 
+function ViewportController({ focus }: { focus: FocusTarget | null }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!focus) {
+      return;
+    }
+
+    if (focus.type === 'clinic') {
+      const [longitude, latitude] = focus.clinic.geometry.coordinates;
+      map.flyTo([latitude, longitude], Math.max(map.getZoom(), 10), {
+        duration: 0.8,
+      });
+      return;
+    }
+
+    const bounds = L.latLngBounds(focus.bounds);
+    const isSinglePoint = bounds.getSouthWest().equals(bounds.getNorthEast());
+
+    if (isSinglePoint) {
+      map.flyTo(bounds.getCenter(), Math.max(map.getZoom(), 9), { duration: 0.8 });
+      return;
+    }
+
+    map.flyToBounds(bounds, {
+      padding: [60, 60],
+      maxZoom: 8,
+      duration: 0.8,
+    });
+  }, [focus, map]);
+
+  return null;
+}
 function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void }) {
   useMapEvent('zoomend', (event) => {
     onZoomChange(event.target.getZoom());
@@ -249,7 +288,5 @@ function formatRate(value: number | null): string {
   }
   return `${value.toFixed(1)}%`;
 }
-
-
 
 

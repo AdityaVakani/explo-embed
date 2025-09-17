@@ -1,9 +1,9 @@
-﻿import { createHash } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { isAllowedOrigin, rateLimit } from '@/lib/security';
 import { runSnowflakeQuery } from '@/lib/snowflake';
-import { getClientIp, normalizeState } from '@/lib/utils';
+import { getClientIp, normalizeClinicName, normalizeState } from '@/lib/utils';
 import { ClinicFeature } from '@/types/clinics';
 
 const CLINIC_SQL = `
@@ -86,8 +86,6 @@ LEFT JOIN ovw ov
 
 const ORDER_BY = 'ORDER BY COALESCE(ov.FILL_RATE_PCT, 0) DESC, c.CLINIC_NAME';
 
-const CLINIC_SQL_ALL = `${CLINIC_SQL}\n${ORDER_BY}`;
-const CLINIC_SQL_BY_STATE = `${CLINIC_SQL}\nWHERE UPPER(c.STATE) = ?\n${ORDER_BY}`;
 
 const CACHE_CONTROL = 's-maxage=120, stale-while-revalidate=300';
 
@@ -177,12 +175,24 @@ function buildResponse(features: ClinicFeature[]) {
   });
 }
 
-async function fetchClinics(state: string | null): Promise<Record<string, unknown>[]> {
+async function fetchClinics(state: string | null, clinic: string | null): Promise<Record<string, unknown>[]> {
+  const conditions: string[] = [];
+  const binds: unknown[] = [];
+
   if (state) {
-    return runSnowflakeQuery<Record<string, unknown>>(CLINIC_SQL_BY_STATE, [state]);
+    conditions.push('UPPER(c.STATE) = ?');
+    binds.push(state);
   }
 
-  return runSnowflakeQuery<Record<string, unknown>>(CLINIC_SQL_ALL, []);
+  if (clinic) {
+    conditions.push('UPPER(c.CLINIC_NAME) = ?');
+    binds.push(clinic);
+  }
+
+  const whereClause = conditions.length ? `\nWHERE ${conditions.join(' AND ')}` : '';
+  const sql = `${CLINIC_SQL}${whereClause}\n${ORDER_BY}`;
+
+  return runSnowflakeQuery<Record<string, unknown>>(sql, binds);
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -204,9 +214,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   const stateFilter = normalizeState(request.nextUrl.searchParams.get('state'));
+  const clinicFilter = normalizeClinicName(request.nextUrl.searchParams.get('clinic'));
 
   try {
-    const rows = await fetchClinics(stateFilter);
+    const rows = await fetchClinics(stateFilter, clinicFilter);
     const features = rows
       .map((row) => transformRow(row))
       .filter((feature): feature is ClinicFeature => Boolean(feature));
@@ -218,4 +229,3 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

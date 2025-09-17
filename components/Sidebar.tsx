@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { escapeHtml } from '@/lib/utils';
 import type { ClinicFeature } from '@/types/clinics';
@@ -9,9 +9,10 @@ type SidebarProps = {
   error: string | null;
 };
 
-type MetricKey = 'slots_available' | 'slots_booked' | 'total_slots_offered' | 'fill_rate_pct';
+type MetricKey = 'rank' | 'slots_available' | 'slots_booked' | 'total_slots_offered' | 'fill_rate_pct';
 
 const METRICS: Array<{ key: MetricKey; label: string; format?: (value: number | null) => string }> = [
+  { key: 'rank', label: 'Rank' },
   { key: 'slots_available', label: 'Available Slots' },
   { key: 'slots_booked', label: 'Booked Slots' },
   { key: 'total_slots_offered', label: 'Total Slots' },
@@ -63,12 +64,7 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
   const safeCity = properties.city ? escapeHtml(properties.city) : null;
   const safeState = properties.state ? escapeHtml(properties.state) : null;
   const safeClinicId = properties.clinic_id ? escapeHtml(properties.clinic_id) : null;
-  const safePetTypes = properties.pet_types_available
-    ? escapeHtml(String(properties.pet_types_available))
-    : null;
-
-  const scoreValue = Number(properties.score ?? 0);
-  const normalizedScore = Number.isFinite(scoreValue) ? Math.max(0, Math.min(100, scoreValue)) : 0;
+  const safePetTypes = properties.pet_types_available ? escapeHtml(String(properties.pet_types_available)) : null;
 
   return (
     <aside className="flex h-full w-[300px] flex-col gap-6 border-r border-slate-800/60 bg-slate-950/75 px-6 py-8 text-sm text-slate-200">
@@ -83,29 +79,6 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
           <div className="text-xs text-slate-500">Pet types: <span className="text-slate-200">{safePetTypes}</span></div>
         ) : null}
       </header>
-
-      <section className="rounded-xl border border-slate-800/70 bg-slate-900/60 px-5 py-4 shadow-[0_18px_34px_-20px_rgba(15,23,42,0.85)]">
-        <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
-          <span>Opportunity score</span>
-          <span className="font-semibold text-slate-200">{formatNumber(properties.score)}</span>
-        </div>
-        <div className="mt-3 h-2 rounded-full bg-slate-800/80">
-          <div
-            className="h-2 rounded-full bg-gradient-to-r from-sky-500 to-cyan-400"
-            style={{ width: `${normalizedScore}%` }}
-          />
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-          <div className="rounded-lg border border-slate-800/60 bg-slate-900/60 px-3 py-2">
-            <p className="text-[10px] uppercase tracking-wide text-slate-500">Rank</p>
-            <p className="text-base font-semibold text-slate-100">{formatNumber(properties.rank)}</p>
-          </div>
-          <div className="rounded-lg border border-slate-800/60 bg-slate-900/60 px-3 py-2">
-            <p className="text-[10px] uppercase tracking-wide text-slate-500">Available slots</p>
-            <p className="text-base font-semibold text-slate-100">{formatNumber(properties.slots_available)}</p>
-          </div>
-        </div>
-      </section>
 
       <section className="space-y-3">
         <h3 className="text-xs uppercase tracking-[0.3em] text-slate-500">Utilization</h3>

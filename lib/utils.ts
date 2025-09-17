@@ -1,4 +1,4 @@
-﻿export function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value.replace(/[<>]/g, '');
 }
 
@@ -11,6 +11,14 @@ export function getClientIp(headers: Headers): string {
 }
 
 export function normalizeState(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const normalized = value.trim().toUpperCase();
+  return normalized.length ? normalized : null;
+}
+
+export function normalizeClinicName(value: string | null | undefined): string | null {
   if (!value) {
     return null;
   }

@@ -1,10 +1,15 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useState } from 'react';
 
 import type { ClinicFeature, ClinicFeatureCollection } from '@/types/clinics';
 
 type ClinicsResponse = ClinicFeatureCollection | { error?: unknown } | Record<string, unknown>;
+
+type ClinicFilters = {
+  state: string | null;
+  clinic: string | null;
+};
 
 function extractFeatures(payload: ClinicsResponse): ClinicFeature[] {
   if (payload && typeof payload === 'object' && 'features' in payload) {
@@ -16,7 +21,7 @@ function extractFeatures(payload: ClinicsResponse): ClinicFeature[] {
   return [];
 }
 
-export function useClinics(state: string | null) {
+export function useClinics({ state, clinic }: ClinicFilters) {
   const [clinics, setClinics] = useState<ClinicFeature[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +43,9 @@ export function useClinics(state: string | null) {
         const params = new URLSearchParams();
         if (state) {
           params.set('state', state);
+        }
+        if (clinic) {
+          params.set('clinic', clinic);
         }
 
         const url = params.size ? `/api/clinics?${params.toString()}` : '/api/clinics';
@@ -85,7 +93,7 @@ export function useClinics(state: string | null) {
       isActive = false;
       controller.abort();
     };
-  }, [state, nonce]);
+  }, [state, clinic, nonce]);
 
   return {
     clinics,
