@@ -114,6 +114,16 @@ export default function EmbedPage() {
     setClinicFilter(value);
     if (!value) {
       setSelectedClinic(null);
+      return;
+    }
+
+    const matchingClinic = clinics.find((clinic) => {
+      const rawId = clinic.properties.clinic_id;
+      return typeof rawId === 'string' && rawId.trim().toUpperCase() === value;
+    });
+
+    if (matchingClinic) {
+      setSelectedClinic(matchingClinic);
     }
   };
 
