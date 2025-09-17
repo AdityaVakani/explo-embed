@@ -75,13 +75,14 @@ export function useClinics({ state, clinicId }: ClinicFilters) {
 
         const features = extractFeatures(payload);
         setAvailableClinics(features);
-        const normalizedClinicId = clinicId?.trim() ?? null;
+        const normalizedClinicId = clinicId?.trim().toUpperCase() ?? null;
         const filteredFeatures =
           normalizedClinicId === null
             ? features
             : features.filter((feature) => {
-                const id = feature.properties.clinic_id;
-                return typeof id === 'string' && id.trim() === normalizedClinicId;
+                const rawId = feature.properties.clinic_id;
+                const id = typeof rawId === 'string' ? rawId.trim().toUpperCase() : null;
+                return id !== null && id === normalizedClinicId;
               });
         setClinics(filteredFeatures);
       } catch (cause) {

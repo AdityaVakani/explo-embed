@@ -83,7 +83,7 @@ export function normalizeClinicId(value: string | null | undefined): string | nu
   if (!value) {
     return null;
   }
-  const normalized = value.trim();
+  const normalized = value.trim().toUpperCase();
   return normalized.length ? normalized : null;
 }
 
