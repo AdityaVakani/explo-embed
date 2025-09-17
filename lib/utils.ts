@@ -14,7 +14,7 @@ export function normalizeState(value: string | null | undefined): string | null 
   if (!value) {
     return null;
   }
-  const normalized = value.trim().toUpperCase();
+  const normalized = value.trim().replace(/\s+/g, ' ').toUpperCase();
   return normalized.length ? normalized : null;
 }
 
@@ -22,6 +22,7 @@ export function normalizeClinicName(value: string | null | undefined): string | 
   if (!value) {
     return null;
   }
-  const normalized = value.trim().toUpperCase();
+  const normalized = value.trim().replace(/\s+/g, ' ').toUpperCase();
   return normalized.length ? normalized : null;
 }
+

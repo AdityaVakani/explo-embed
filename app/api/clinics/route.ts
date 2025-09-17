@@ -6,6 +6,11 @@ import { runSnowflakeQuery } from '@/lib/snowflake';
 import { getClientIp, normalizeClinicName, normalizeState } from '@/lib/utils';
 import { ClinicFeature } from '@/types/clinics';
 
+const COORDINATE_FILTER = `(
+  (c.LATITUDE BETWEEN 24.396308 AND 49.0 AND c.LONGITUDE BETWEEN -125.0 AND -66.93457)
+  OR (c.LATITUDE BETWEEN 51.214183 AND 71.5388 AND c.LONGITUDE BETWEEN -179.148909 AND -129.9795)
+  OR (c.LATITUDE BETWEEN 18.910361 AND 22.2356 AND c.LONGITUDE BETWEEN -160.2471 AND -154.8068)
+)`;
 const CLINIC_SQL = `
 WITH base AS (
     SELECT CLINIC_ID, SNAPSHOT_ID, SNAPSHOT_INGESTED_AT
@@ -82,6 +87,7 @@ LEFT JOIN ovw ov
   ON ov.CLINIC_ID = a.CLINIC_ID
  AND ov.SNAPSHOT_ID = a.SNAPSHOT_ID
   AND WINDOW_DAYS = 7
+WHERE ${COORDINATE_FILTER}
 `;
 
 const ORDER_BY = 'ORDER BY COALESCE(ov.FILL_RATE_PCT, 0) DESC, c.CLINIC_NAME';
@@ -180,17 +186,17 @@ async function fetchClinics(state: string | null, clinic: string | null): Promis
   const binds: unknown[] = [];
 
   if (state) {
-    conditions.push('UPPER(c.STATE) = ?');
+    conditions.push('TRIM(UPPER(c.STATE)) = ?');
     binds.push(state);
   }
 
   if (clinic) {
-    conditions.push('UPPER(c.CLINIC_NAME) = ?');
+    conditions.push("REGEXP_REPLACE(TRIM(UPPER(c.CLINIC_NAME)), '\\s+', ' ') = ?");
     binds.push(clinic);
   }
 
-  const whereClause = conditions.length ? `\nWHERE ${conditions.join(' AND ')}` : '';
-  const sql = `${CLINIC_SQL}${whereClause}\n${ORDER_BY}`;
+  const filterClause = conditions.length ? `\n AND ${conditions.join(' AND ')}` : '';
+  const sql = `${CLINIC_SQL}${filterClause}\n${ORDER_BY}`;
 
   return runSnowflakeQuery<Record<string, unknown>>(sql, binds);
 }
@@ -229,3 +235,4 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+

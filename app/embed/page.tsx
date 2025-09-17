@@ -45,13 +45,15 @@ export default function EmbedPage() {
   }, [clinics, selectedClinic]);
 
   useEffect(() => {
-    if (clinicFilter) {
-      return;
-    }
     const names = clinics
       .map((clinic) => clinic.properties.clinic_name?.trim())
       .filter((name): name is string => Boolean(name && name.length));
     const uniqueNames = Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
+
+    if (clinicFilter && clinicFilter.length && !uniqueNames.includes(clinicFilter)) {
+      uniqueNames.unshift(clinicFilter);
+    }
+
     setClinicOptions(uniqueNames);
   }, [clinics, clinicFilter]);
 
@@ -185,3 +187,4 @@ function computeBounds(clinics: ClinicFeature[]): [[number, number], [number, nu
     [maxLat, maxLng],
   ];
 }
+

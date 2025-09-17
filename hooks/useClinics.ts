@@ -72,7 +72,16 @@ export function useClinics({ state, clinic }: ClinicFilters) {
           return;
         }
 
-        setClinics(extractFeatures(payload));
+        const features = extractFeatures(payload);
+        const normalizedClinic = clinic?.trim().replace(/\\s+/g, ' ').toUpperCase() ?? null;
+        const filteredFeatures =
+          normalizedClinic === null
+            ? features
+            : features.filter((feature) => {
+                const name = feature.properties.clinic_name;
+                return typeof name === "string" && name.trim().replace(/\\s+/g, ' ').toUpperCase() === normalizedClinic;
+              });
+        setClinics(filteredFeatures);
       } catch (cause) {
         if (controller.signal.aborted || !isActive) {
           return;
@@ -102,3 +111,5 @@ export function useClinics({ state, clinic }: ClinicFilters) {
     refetch,
   };
 }
+
+
