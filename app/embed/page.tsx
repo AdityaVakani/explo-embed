@@ -47,13 +47,14 @@ export default function EmbedPage() {
   useEffect(() => {
     const seen = new globalThis.Map<string, string>();
     for (const clinic of availableClinics) {
-      const id = clinic.properties.clinic_id?.trim();
+      const rawId = clinic.properties.clinic_id;
+      const id = typeof rawId === 'string' ? rawId.trim().toUpperCase() : null;
       const name = clinic.properties.clinic_name?.trim();
-      if (!id || !name) {
+      if (!id) {
         continue;
       }
       if (!seen.has(id)) {
-        seen.set(id, name);
+        seen.set(id, name ?? id);
       }
     }
 
@@ -62,10 +63,13 @@ export default function EmbedPage() {
       .sort((a, b) => a.label.localeCompare(b.label));
 
     if (clinicFilter && !options.some((option) => option.value === clinicFilter)) {
-      const fallbackName = availableClinics.find((clinic) => clinic.properties.clinic_id?.trim() === clinicFilter)?.properties.clinic_name?.trim();
+      const fallbackName = availableClinics.find((clinic) => {
+        const rawId = clinic.properties.clinic_id;
+        const id = typeof rawId === 'string' ? rawId.trim().toUpperCase() : null;
+        return id === clinicFilter;
+      })?.properties.clinic_name?.trim();
       options.unshift({ value: clinicFilter, label: fallbackName ?? clinicFilter });
     }
-
     setClinicOptions(options);
   }, [availableClinics, clinicFilter]);
 
@@ -89,11 +93,9 @@ export default function EmbedPage() {
   }, [clinicFilter, clinics]);
 
   useEffect(() => {
-    if (!clinicFilter) {
-      return;
-    }
     setClinicFilter('');
-  }, [stateFilter, clinicFilter]);
+    setSelectedClinic(null);
+  }, [stateFilter]);
 
   const focusTarget = useMemo<MapFocus>(() => {
     if (clinicFilter && clinics.length) {
@@ -118,9 +120,9 @@ export default function EmbedPage() {
       return;
     }
 
-    const matchingClinic = clinics.find((clinic) => {
+    const matchingClinic = availableClinics.find((clinic) => {
       const rawId = clinic.properties.clinic_id;
-      return typeof rawId === 'string' && rawId.trim().toUpperCase() === value;
+      return typeof rawId === 'string' && rawId.trim().toUpperCase() === normalizedValue;
     });
 
     if (matchingClinic) {
@@ -210,6 +212,15 @@ function computeBounds(clinics: ClinicFeature[]): [[number, number], [number, nu
     [maxLat, maxLng],
   ];
 }
+
+
+
+
+
+
+
+
+
 
 
 
