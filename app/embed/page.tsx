@@ -176,7 +176,7 @@ function computeBounds(clinics: ClinicFeature[]): [[number, number], [number, nu
   let maxLat = Number.NEGATIVE_INFINITY;
   let minLng = Number.POSITIVE_INFINITY;
   let maxLng = Number.NEGATIVE_INFINITY;
-  for (const clinic of availableClinics) {
+  for (const clinic of clinics) {
     const [longitude, latitude] = clinic.geometry.coordinates;
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
       continue;
