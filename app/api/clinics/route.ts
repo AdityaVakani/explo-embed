@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { isAllowedOrigin, rateLimit } from '@/lib/security';
 import { runSnowflakeQuery } from '@/lib/snowflake';
-import { getClientIp, normalizeClinicId, normalizeState } from '@/lib/utils';
+import { getClientIp, normalizeClinicId, normalizeState, STATE_NAME_TO_CODE } from '@/lib/utils';
 import { ClinicFeature } from '@/types/clinics';
 
 const COORDINATE_FILTER = `(
@@ -186,8 +186,15 @@ async function fetchClinics(state: string | null, clinicId: string | null): Prom
   const binds: unknown[] = [];
 
   if (state) {
-    conditions.push('TRIM(UPPER(c.STATE)) = ?');
-    binds.push(state);
+    const candidates = [state];
+    const mappedState = STATE_NAME_TO_CODE[state];
+    if (mappedState && !candidates.includes(mappedState)) {
+      candidates.push(mappedState);
+    }
+
+    const placeholders = candidates.map(() => '?').join(', ');
+    conditions.push(`TRIM(UPPER(c.STATE)) IN (${placeholders})`);
+    binds.push(...candidates);
   }
 
   if (clinicId) {
@@ -238,5 +245,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+
 
 

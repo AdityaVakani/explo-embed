@@ -10,7 +10,7 @@ export function getClientIp(headers: Headers): string {
   return headers.get('x-real-ip') ?? '';
 }
 
-const STATE_NAME_TO_CODE: Record<string, string> = {
+export const STATE_NAME_TO_CODE: Record<string, string> = {
   'ALABAMA': 'AL',
   'ALASKA': 'AK',
   'ARIZONA': 'AZ',
@@ -68,15 +68,8 @@ export function normalizeState(value: string | null | undefined): string | null 
   if (!value) {
     return null;
   }
-  const normalized = value.trim().replace(/\s+/g, ' ').toUpperCase();
-  if (!normalized.length) {
-    return null;
-  }
-  const mapped = STATE_NAME_TO_CODE[normalized];
-  if (mapped) {
-    return mapped;
-  }
-  return normalized;
+  const normalized = value.trim().replace(/\\s+/g, ' ').toUpperCase();
+  return normalized.length ? normalized : null;
 }
 
 export function normalizeClinicId(value: string | null | undefined): string | null {
@@ -86,5 +79,6 @@ export function normalizeClinicId(value: string | null | undefined): string | nu
   const normalized = value.trim().toUpperCase();
   return normalized.length ? normalized : null;
 }
+
 
 
