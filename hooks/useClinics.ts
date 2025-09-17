@@ -45,8 +45,9 @@ export function useClinics({ state, clinicId }: ClinicFilters) {
         if (state) {
           params.set('state', state);
         }
-        if (clinicId) {
-          params.set('clinicId', clinicId);
+        const normalizedClinicParam = clinicId?.trim().toUpperCase() ?? null;
+        if (normalizedClinicParam) {
+          params.set('clinicId', normalizedClinicParam);
         }
 
         const url = params.size ? `/api/clinics?${params.toString()}` : '/api/clinics';
@@ -116,5 +117,6 @@ export function useClinics({ state, clinicId }: ClinicFilters) {
     refetch,
   };
 }
+
 
 

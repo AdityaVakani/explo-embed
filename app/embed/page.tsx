@@ -111,8 +111,9 @@ export default function EmbedPage() {
   const totalLocations = useMemo(() => clinics.length, [clinics.length]);
 
   const handleClinicFilterChange = (value: string) => {
-    setClinicFilter(value);
-    if (!value) {
+    const normalizedValue = value.trim().toUpperCase();
+    setClinicFilter(normalizedValue);
+    if (!normalizedValue) {
       setSelectedClinic(null);
       return;
     }
@@ -209,3 +210,4 @@ function computeBounds(clinics: ClinicFeature[]): [[number, number], [number, nu
     [maxLat, maxLng],
   ];
 }
+

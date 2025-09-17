@@ -224,6 +224,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   try {
     const rows = await fetchClinics(stateFilter, clinicId);
+    console.log('[api/clinics] rows', { count: rows.length });
     const features = rows
       .map((row) => transformRow(row))
       .filter((feature): feature is ClinicFeature => Boolean(feature));
