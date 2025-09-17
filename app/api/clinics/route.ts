@@ -222,6 +222,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const stateFilter = normalizeState(request.nextUrl.searchParams.get('state'));
   const clinicId = normalizeClinicId(request.nextUrl.searchParams.get('clinicId'));
 
+  console.log('[api/clinics] input', { stateFilter, clinicId });
+
   try {
     const rows = await fetchClinics(stateFilter, clinicId);
     console.log('[api/clinics] rows', { count: rows.length });
@@ -236,4 +238,5 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
 
