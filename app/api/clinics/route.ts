@@ -191,7 +191,7 @@ async function fetchClinics(state: string | null, clinicId: string | null): Prom
   }
 
   if (clinicId) {
-    conditions.push('c.CLINIC_ID = ?');
+    conditions.push('UPPER(c.CLINIC_ID) = ?');
     binds.push(clinicId);
   }
 
