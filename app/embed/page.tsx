@@ -98,8 +98,8 @@ export default function EmbedPage() {
   }, [stateFilter]);
 
   const focusTarget = useMemo<MapFocus>(() => {
-    if (clinicFilter && clinics.length) {
-      return { type: 'clinic', clinic: clinics[0] };
+    if (selectedClinic) {
+      return { type: 'clinic', clinic: selectedClinic };
     }
     if (stateFilter && clinics.length) {
       const bounds = computeBounds(clinics);
@@ -108,7 +108,7 @@ export default function EmbedPage() {
       }
     }
     return null;
-  }, [clinicFilter, clinics, stateFilter]);
+  }, [selectedClinic, stateFilter, clinics]);
 
   const totalLocations = useMemo(() => clinics.length, [clinics.length]);
 
@@ -134,7 +134,6 @@ export default function EmbedPage() {
     <div className="flex h-full min-h-screen flex-col bg-gradient-to-br from-slate-100 via-slate-50 to-white">
       <header className="flex items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur px-8 py-6">
         <div className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Explo embed</p>
           <h1 className="text-2xl font-semibold text-slate-900">Map of analyzed clinics</h1>
           <p className="text-sm text-slate-600">
             Tracking <span className="font-semibold text-slate-700">{totalLocations}</span> locations across the selected network.
