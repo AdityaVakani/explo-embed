@@ -45,7 +45,7 @@ export default function EmbedPage() {
   }, [clinics, selectedClinic]);
 
   useEffect(() => {
-    const seen = new Map<string, string>();
+    const seen = new globalThis.Map<string, string>();
     for (const clinic of availableClinics) {
       const id = clinic.properties.clinic_id?.trim();
       const name = clinic.properties.clinic_name?.trim();
