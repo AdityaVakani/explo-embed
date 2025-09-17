@@ -22,11 +22,11 @@ const METRICS: Array<{ key: MetricKey; label: string; format?: (value: number | 
 export function Sidebar({ clinic, loading, error }: SidebarProps) {
   if (loading) {
     return (
-      <aside className="flex h-full w-[300px] flex-col gap-4 border-r border-slate-800/60 bg-slate-950/70 px-5 py-6">
-        <div className="h-6 w-1/2 animate-pulse rounded bg-slate-800/60" />
+      <aside className="flex h-full w-[300px] flex-col gap-4 border-r border-slate-200 bg-white px-5 py-6">
+        <div className="h-6 w-1/2 animate-pulse rounded bg-slate-200/80" />
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="h-4 w-full animate-pulse rounded bg-slate-800/60" />
+            <div key={index} className="h-4 w-full animate-pulse rounded bg-slate-200/80" />
           ))}
         </div>
       </aside>
@@ -35,8 +35,8 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
 
   if (error) {
     return (
-      <aside className="flex h-full w-[300px] flex-col gap-3 border-r border-slate-800/60 bg-slate-950/70 px-5 py-6 text-sm text-red-400">
-        <h2 className="text-base font-semibold text-slate-100">Unable to load data</h2>
+      <aside className="flex h-full w-[300px] flex-col gap-3 border-r border-slate-200 bg-white px-5 py-6 text-sm text-red-400">
+        <h2 className="text-base font-semibold text-slate-900">Unable to load data</h2>
         <p>{escapeHtml(error)}</p>
       </aside>
     );
@@ -44,12 +44,12 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
 
   if (!clinic) {
     return (
-      <aside className="flex h-full w-[300px] flex-col justify-center gap-4 border-r border-slate-800/60 bg-slate-950/70 px-6 py-10 text-sm text-slate-400">
+      <aside className="flex h-full w-[300px] flex-col justify-center gap-4 border-r border-slate-200 bg-white px-6 py-10 text-sm text-slate-500">
         <div>
-          <h2 className="text-lg font-semibold text-slate-100">Location details</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Location details</h2>
           <p>Click a pin to explore the surrounding metrics.</p>
         </div>
-        <div className="rounded-lg border border-slate-800/60 bg-slate-900/70 px-4 py-5">
+        <div className="rounded-lg border border-slate-200 bg-white px-4 py-5">
           <p className="text-xs uppercase tracking-wide text-slate-500">Tip</p>
           <p className="text-sm text-slate-300">
             Use the map markers to compare performance, then select a clinic to reveal demographic and capacity details here.
@@ -67,16 +67,16 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
   const safePetTypes = properties.pet_types_available ? escapeHtml(String(properties.pet_types_available)) : null;
 
   return (
-    <aside className="flex h-full w-[300px] flex-col gap-6 border-r border-slate-800/60 bg-slate-950/75 px-6 py-8 text-sm text-slate-200">
+    <aside className="flex h-full w-[300px] flex-col gap-6 border-r border-slate-200 bg-white px-6 py-8 text-sm text-slate-700">
       <header className="space-y-2">
         <div className="text-xs uppercase tracking-[0.2em] text-slate-500">Selected clinic</div>
-        <h2 className="text-xl font-semibold text-slate-50">{safeName}</h2>
-        <div className="text-xs text-slate-400">{[safeCity, safeState].filter(Boolean).join(', ')}</div>
+        <h2 className="text-xl font-semibold text-slate-900">{safeName}</h2>
+        <div className="text-xs text-slate-500">{[safeCity, safeState].filter(Boolean).join(', ')}</div>
         {safeClinicId ? (
-          <div className="text-xs text-slate-500">ID: <span className="text-slate-200">{safeClinicId}</span></div>
+          <div className="text-xs text-slate-500">ID: <span className="text-slate-700">{safeClinicId}</span></div>
         ) : null}
         {safePetTypes ? (
-          <div className="text-xs text-slate-500">Pet types: <span className="text-slate-200">{safePetTypes}</span></div>
+          <div className="text-xs text-slate-500">Pet types: <span className="text-slate-700">{safePetTypes}</span></div>
         ) : null}
       </header>
 
@@ -84,9 +84,9 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
         <h3 className="text-xs uppercase tracking-[0.3em] text-slate-500">Utilization</h3>
         <div className="space-y-2 text-xs">
           {METRICS.map(({ key, label, format }) => (
-            <div key={key} className="flex items-center justify-between rounded-lg border border-slate-800/60 bg-slate-900/50 px-3 py-2">
-              <span className="text-slate-400">{label}</span>
-              <span className="font-semibold text-slate-100">
+            <div key={key} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-100 px-3 py-2">
+              <span className="text-slate-500">{label}</span>
+              <span className="font-semibold text-slate-900">
                 {format ? format(properties[key]) : formatNumber(properties[key])}
               </span>
             </div>
@@ -120,3 +120,6 @@ function formatRate(value: number | null): string {
 
   return `${value.toFixed(1)}%`;
 }
+
+
+

@@ -29,7 +29,7 @@ const identifyClinic = (clinic: ClinicFeature) =>
 
 const DEFAULT_CENTER: [number, number] = [37.0902, -95.7129];
 const DEFAULT_ZOOM = 4;
-const TILE_LAYER_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const TILE_LAYER_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 const TILE_ATTRIBUTION =
   "&copy; <a href='https://carto.com/attributions'>CARTO</a> | &copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors";
 
@@ -37,7 +37,7 @@ export function Map({ clinics, selectedClinic, onSelectClinic, focus, radiusMete
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
 
   return (
-    <div className="relative h-full min-h-[520px] w-full rounded-xl border border-slate-800 bg-slate-950/60 shadow-[0_25px_70px_-25px_rgba(15,23,42,0.75)]">
+    <div className="relative h-full min-h-[520px] w-full rounded-xl border border-slate-200 bg-white shadow-[0_20px_60px_-25px_rgba(15,23,42,0.25)]">
       <MapContainer
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
@@ -46,7 +46,7 @@ export function Map({ clinics, selectedClinic, onSelectClinic, focus, radiusMete
         preferCanvas
         zoomAnimation
         fadeAnimation={false}
-        className="h-full w-full text-slate-900"
+        className="h-full w-full text-slate-800"
         style={{ height: '100%', width: '100%', borderRadius: '0.75rem' }}
         attributionControl
       >
@@ -82,17 +82,17 @@ export function Map({ clinics, selectedClinic, onSelectClinic, focus, radiusMete
               selectedClinic.geometry.coordinates[0],
             ]}
             pathOptions={{
-              color: '#38bdf8',
-              fillColor: '#0ea5e9',
-              fillOpacity: 0.1,
-              weight: 1.5,
+              color: '#1d4ed8',
+              fillColor: '#60a5fa',
+              fillOpacity: 0.15,
+              weight: 1.25,
             }}
             radius={radiusMeters}
           />
         ) : null}
       </MapContainer>
       {!clinics.length && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-slate-950/70 text-sm text-slate-400 backdrop-blur">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-white/85 text-sm text-slate-500 backdrop-blur">
           No clinics found.
         </div>
       )}
@@ -160,8 +160,8 @@ function createMarkerIcon(rank: number | null, selected: boolean, zoom: number) 
   const svgSize = Math.round(baseSize * scale * 2.2);
   const circleRadius = Math.round((selected ? 10 : 7) * scale);
 
-  const gradientStart = selected ? '#38bdf8' : '#ff6b6b';
-  const gradientEnd = selected ? '#0ea5e9' : '#e11d48';
+  const gradientStart = selected ? '#2563eb' : '#14b8a6';
+  const gradientEnd = selected ? '#60a5fa' : '#2dd4bf';
 
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
   <svg width="${svgSize}" height="${svgSize * 1.4}" viewBox="0 0 40 56" xmlns="http://www.w3.org/2000/svg">
@@ -201,14 +201,14 @@ function createMarkerIcon(rank: number | null, selected: boolean, zoom: number) 
 
 function createClusterIcon(pointCount: number, zoom: number) {
   const scale = Math.min(1.2, Math.max(0.8, zoom / 8));
-  const size = Math.round(34 * scale);
+  const size = Math.round(30 * scale);
 
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
   <svg width="${size}" height="${size}" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="clusterGradient" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#1e293b" opacity="1" />
-        <stop offset="100%" stop-color="#0f172a" opacity="0.95" />
+        <stop offset="0%" stop-color="#bfdbfe" opacity="1" />
+        <stop offset="100%" stop-color="#93c5fd" opacity="0.95" />
       </radialGradient>
       <filter id="clusterShadow" x="-60%" y="-60%" width="220%" height="220%">
         <feGaussianBlur stdDeviation="5" result="shadow" />
@@ -219,8 +219,8 @@ function createClusterIcon(pointCount: number, zoom: number) {
       </filter>
     </defs>
     <g filter="url(#clusterShadow)">
-      <circle cx="28" cy="28" r="24" fill="url(#clusterGradient)" stroke="#0ea5e9" stroke-width="3" />
-      <text x="28" y="32" text-anchor="middle" font-family="Inter, Arial" font-weight="700" font-size="16" fill="#38bdf8">${pointCount}</text>
+      <circle cx="28" cy="28" r="24" fill="url(#clusterGradient)" stroke="#2563eb" stroke-width="3" />
+      <text x="28" y="32" text-anchor="middle" font-family="Inter, Arial" font-weight="700" font-size="16" fill="#1d4ed8">${pointCount}</text>
     </g>
   </svg>`;
 
@@ -243,7 +243,8 @@ function ViewportController({ focus }: { focus: FocusTarget | null }) {
     if (focus.type === 'clinic') {
       const [longitude, latitude] = focus.clinic.geometry.coordinates;
       map.flyTo([latitude, longitude], Math.max(map.getZoom(), 10), {
-        duration: 0.8,
+        duration: 0.6,
+        easeLinearity: 0.25,
       });
       return;
     }
@@ -252,14 +253,15 @@ function ViewportController({ focus }: { focus: FocusTarget | null }) {
     const isSinglePoint = bounds.getSouthWest().equals(bounds.getNorthEast());
 
     if (isSinglePoint) {
-      map.flyTo(bounds.getCenter(), Math.max(map.getZoom(), 9), { duration: 0.8 });
+      map.flyTo(bounds.getCenter(), Math.max(map.getZoom(), 9), { duration: 0.6, easeLinearity: 0.25 });
       return;
     }
 
     map.flyToBounds(bounds, {
-      padding: [60, 60],
-      maxZoom: 8,
-      duration: 0.8,
+      padding: [80, 80],
+      maxZoom: 7.5,
+      duration: 0.6,
+      easeLinearity: 0.25,
     });
   }, [focus, map]);
 

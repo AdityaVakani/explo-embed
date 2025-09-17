@@ -131,13 +131,13 @@ export default function EmbedPage() {
   };
 
   return (
-    <div className="flex h-full min-h-screen flex-col bg-gradient-to-br from-slate-950 via-slate-950 to-slate-900">
-      <header className="flex items-center justify-between border-b border-slate-800/70 bg-slate-950/80 px-8 py-6">
+    <div className="flex h-full min-h-screen flex-col bg-gradient-to-br from-slate-100 via-slate-50 to-white">
+      <header className="flex items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur px-8 py-6">
         <div className="space-y-1">
           <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Explo embed</p>
-          <h1 className="text-2xl font-semibold text-slate-100">Map of analyzed clinics</h1>
-          <p className="text-sm text-slate-400">
-            Tracking <span className="font-semibold text-slate-200">{totalLocations}</span> locations across the selected network.
+          <h1 className="text-2xl font-semibold text-slate-900">Map of analyzed clinics</h1>
+          <p className="text-sm text-slate-600">
+            Tracking <span className="font-semibold text-slate-700">{totalLocations}</span> locations across the selected network.
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -212,6 +212,7 @@ function computeBounds(clinics: ClinicFeature[]): [[number, number], [number, nu
     [maxLat, maxLng],
   ];
 }
+
 
 
 
