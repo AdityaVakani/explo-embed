@@ -23,12 +23,12 @@ type MapFocus =
 export default function EmbedPage() {
   const [stateFilter, setStateFilter] = useState('');
   const [clinicFilter, setClinicFilter] = useState('');
-  const [clinicOptions, setClinicOptions] = useState<string[]>([]);
+  const [clinicOptions, setClinicOptions] = useState<Array<{ value: string; label: string }>>([]);
 
   const { states, loading: statesLoading } = useClinicStates();
-  const { clinics, loading, error } = useClinics({
+  const { clinics, availableClinics, loading, error } = useClinics({
     state: stateFilter || null,
-    clinic: clinicFilter || null,
+    clinicId: clinicFilter || null,
   });
   const [selectedClinic, setSelectedClinic] = useState<ClinicFeature | null>(null);
 
@@ -45,17 +45,29 @@ export default function EmbedPage() {
   }, [clinics, selectedClinic]);
 
   useEffect(() => {
-    const names = clinics
-      .map((clinic) => clinic.properties.clinic_name?.trim())
-      .filter((name): name is string => Boolean(name && name.length));
-    const uniqueNames = Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
-
-    if (clinicFilter && clinicFilter.length && !uniqueNames.includes(clinicFilter)) {
-      uniqueNames.unshift(clinicFilter);
+    const seen = new Map<string, string>();
+    for (const clinic of availableClinics) {
+      const id = clinic.properties.clinic_id?.trim();
+      const name = clinic.properties.clinic_name?.trim();
+      if (!id || !name) {
+        continue;
+      }
+      if (!seen.has(id)) {
+        seen.set(id, name);
+      }
     }
 
-    setClinicOptions(uniqueNames);
-  }, [clinics, clinicFilter]);
+    const options = Array.from(seen.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    if (clinicFilter && !options.some((option) => option.value === clinicFilter)) {
+      const fallbackName = availableClinics.find((clinic) => clinic.properties.clinic_id?.trim() === clinicFilter)?.properties.clinic_name?.trim();
+      options.unshift({ value: clinicFilter, label: fallbackName ?? clinicFilter });
+    }
+
+    setClinicOptions(options);
+  }, [availableClinics, clinicFilter]);
 
   useEffect(() => {
     if (!clinicFilter) {
@@ -164,7 +176,7 @@ function computeBounds(clinics: ClinicFeature[]): [[number, number], [number, nu
   let maxLat = Number.NEGATIVE_INFINITY;
   let minLng = Number.POSITIVE_INFINITY;
   let maxLng = Number.NEGATIVE_INFINITY;
-  for (const clinic of clinics) {
+  for (const clinic of availableClinics) {
     const [longitude, latitude] = clinic.geometry.coordinates;
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
       continue;
@@ -187,4 +199,3 @@ function computeBounds(clinics: ClinicFeature[]): [[number, number], [number, nu
     [maxLat, maxLng],
   ];
 }
-

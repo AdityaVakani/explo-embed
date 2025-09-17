@@ -8,7 +8,7 @@ type ClinicsResponse = ClinicFeatureCollection | { error?: unknown } | Record<st
 
 type ClinicFilters = {
   state: string | null;
-  clinic: string | null;
+  clinicId: string | null;
 };
 
 function extractFeatures(payload: ClinicsResponse): ClinicFeature[] {
@@ -21,8 +21,9 @@ function extractFeatures(payload: ClinicsResponse): ClinicFeature[] {
   return [];
 }
 
-export function useClinics({ state, clinic }: ClinicFilters) {
+export function useClinics({ state, clinicId }: ClinicFilters) {
   const [clinics, setClinics] = useState<ClinicFeature[]>([]);
+  const [availableClinics, setAvailableClinics] = useState<ClinicFeature[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nonce, setNonce] = useState(0);
@@ -44,8 +45,8 @@ export function useClinics({ state, clinic }: ClinicFilters) {
         if (state) {
           params.set('state', state);
         }
-        if (clinic) {
-          params.set('clinic', clinic);
+        if (clinicId) {
+          params.set('clinicId', clinicId);
         }
 
         const url = params.size ? `/api/clinics?${params.toString()}` : '/api/clinics';
@@ -73,13 +74,14 @@ export function useClinics({ state, clinic }: ClinicFilters) {
         }
 
         const features = extractFeatures(payload);
-        const normalizedClinic = clinic?.trim().replace(/\\s+/g, ' ').toUpperCase() ?? null;
+        setAvailableClinics(features);
+        const normalizedClinicId = clinicId?.trim() ?? null;
         const filteredFeatures =
-          normalizedClinic === null
+          normalizedClinicId === null
             ? features
             : features.filter((feature) => {
-                const name = feature.properties.clinic_name;
-                return typeof name === "string" && name.trim().replace(/\\s+/g, ' ').toUpperCase() === normalizedClinic;
+                const id = feature.properties.clinic_id;
+                return typeof id === 'string' && id.trim() === normalizedClinicId;
               });
         setClinics(filteredFeatures);
       } catch (cause) {
@@ -88,6 +90,7 @@ export function useClinics({ state, clinic }: ClinicFilters) {
         }
         const message = cause instanceof Error ? cause.message : 'Unknown error';
         setError(message);
+        setAvailableClinics([]);
         setClinics([]);
       } finally {
         if (isActive) {
@@ -102,10 +105,11 @@ export function useClinics({ state, clinic }: ClinicFilters) {
       isActive = false;
       controller.abort();
     };
-  }, [state, clinic, nonce]);
+  }, [state, clinicId, nonce]);
 
   return {
     clinics,
+    availableClinics,
     loading,
     error,
     refetch,

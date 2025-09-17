@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { isAllowedOrigin, rateLimit } from '@/lib/security';
 import { runSnowflakeQuery } from '@/lib/snowflake';
-import { getClientIp, normalizeClinicName, normalizeState } from '@/lib/utils';
+import { getClientIp, normalizeClinicId, normalizeState } from '@/lib/utils';
 import { ClinicFeature } from '@/types/clinics';
 
 const COORDINATE_FILTER = `(
@@ -181,7 +181,7 @@ function buildResponse(features: ClinicFeature[]) {
   });
 }
 
-async function fetchClinics(state: string | null, clinic: string | null): Promise<Record<string, unknown>[]> {
+async function fetchClinics(state: string | null, clinicId: string | null): Promise<Record<string, unknown>[]> {
   const conditions: string[] = [];
   const binds: unknown[] = [];
 
@@ -190,9 +190,9 @@ async function fetchClinics(state: string | null, clinic: string | null): Promis
     binds.push(state);
   }
 
-  if (clinic) {
-    conditions.push("REGEXP_REPLACE(TRIM(UPPER(c.CLINIC_NAME)), '\\s+', ' ') = ?");
-    binds.push(clinic);
+  if (clinicId) {
+    conditions.push('c.CLINIC_ID = ?');
+    binds.push(clinicId);
   }
 
   const filterClause = conditions.length ? `\n AND ${conditions.join(' AND ')}` : '';
@@ -220,10 +220,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   const stateFilter = normalizeState(request.nextUrl.searchParams.get('state'));
-  const clinicFilter = normalizeClinicName(request.nextUrl.searchParams.get('clinic'));
+  const clinicId = normalizeClinicId(request.nextUrl.searchParams.get('clinicId'));
 
   try {
-    const rows = await fetchClinics(stateFilter, clinicFilter);
+    const rows = await fetchClinics(stateFilter, clinicId);
     const features = rows
       .map((row) => transformRow(row))
       .filter((feature): feature is ClinicFeature => Boolean(feature));

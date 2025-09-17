@@ -2,9 +2,11 @@
 
 import { ChangeEvent } from 'react';
 
+export type ClinicFilterOption = { value: string; label: string };
+
 export type ClinicFilterProps = {
   value: string;
-  options: string[];
+  options: ClinicFilterOption[];
   onChange: (value: string) => void;
   disabled?: boolean;
 };
@@ -24,9 +26,9 @@ export function ClinicFilter({ value, options, onChange, disabled }: ClinicFilte
         disabled={disabled}
       >
         <option value="">All Clinics</option>
-        {options.map((name) => (
-          <option key={name} value={name}>
-            {name}
+        {options.map(({ value: optionValue, label }) => (
+          <option key={optionValue} value={optionValue}>
+            {label}
           </option>
         ))}
       </select>
