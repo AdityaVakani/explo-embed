@@ -40,7 +40,7 @@ export default function EmbedPage() {
   }, [clinics, selectedClinic]);
 
   useEffect(() => {
-    const seen = new Map<string, string>();
+    const seen = new globalThis.Map<string, string>();
     for (const clinic of availableClinics) {
       const rawId = clinic.properties.clinic_id;
       const id = typeof rawId === 'string' ? rawId.trim().toUpperCase() : null;
@@ -205,3 +205,6 @@ function computeBounds(clinics: ClinicFeature[]): [[number, number], [number, nu
     [maxLat, maxLng],
   ];
 }
+
+
+
