@@ -76,11 +76,12 @@ export default function EmbedPage() {
     if (!clinicFilters.length) {
       return;
     }
-    if (!clinics.length) {
+    if (clinicFilters.length !== 1) {
       setSelectedClinic(null);
       return;
     }
-    if (clinicFilters.length !== 1) {
+    if (!clinics.length) {
+      setSelectedClinic(null);
       return;
     }
     setSelectedClinic((current) => {
