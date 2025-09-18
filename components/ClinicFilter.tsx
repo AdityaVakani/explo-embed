@@ -158,7 +158,7 @@ export function ClinicFilter({ values, options, onChange, disabled }: ClinicFilt
   return (
     <div
       ref={containerRef}
-      className={`relative flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-slate-700 ${open ? 'z-[1100]' : 'z-20'}`}
+      className={`relative isolate overflow-visible flex flex-col gap-1 text-xs font-medium uppercase tracking-wide text-slate-700 ${open ? 'z-[10000]' : 'z-20'}`}
     >
       <span className="text-[10px] font-semibold text-slate-500">Clinics</span>
       <button
@@ -197,7 +197,7 @@ export function ClinicFilter({ values, options, onChange, disabled }: ClinicFilt
         </div>
       ) : null}
       {open ? (
-        <div className="absolute right-0 top-full z-[1200] shadow-2xl mt-2 w-72 rounded-lg border border-slate-200 bg-white p-3 text-xs shadow-xl">
+        <div className="absolute right-0 top-full z-[10010] mt-2 w-72 rounded-lg border border-slate-200 bg-white p-3 text-xs shadow-2xl">
           <input
             ref={searchInputRef}
             type="text"

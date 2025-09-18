@@ -132,7 +132,7 @@ export default function EmbedPage() {
 
   return (
     <div className="flex h-full min-h-screen flex-col bg-gradient-to-br from-slate-100 via-slate-50 to-white">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur px-8 py-6">
+      <header className="relative z-[2000] flex items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur px-8 py-6">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold text-slate-900">Map of analyzed clinics</h1>
           <p className="text-sm text-slate-600">
