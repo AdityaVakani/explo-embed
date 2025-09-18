@@ -5,9 +5,7 @@ import dynamic from 'next/dynamic';
 
 import { ClinicFilter } from '@/components/ClinicFilter';
 import { Sidebar } from '@/components/Sidebar';
-import { StateFilter } from '@/components/StateFilter';
 import { useClinics } from '@/hooks/useClinics';
-import { useClinicStates } from '@/hooks/useClinicStates';
 import { escapeHtml } from '@/lib/utils';
 import type { ClinicFeature } from '@/types/clinics';
 
@@ -21,14 +19,11 @@ type MapFocus =
   | null;
 
 export default function EmbedPage() {
-  const [stateFilter, setStateFilter] = useState('');
-  const [clinicFilter, setClinicFilter] = useState('');
+  const [clinicFilters, setClinicFilters] = useState<string[]>([]);
   const [clinicOptions, setClinicOptions] = useState<Array<{ value: string; label: string }>>([]);
 
-  const { states, loading: statesLoading } = useClinicStates();
   const { clinics, availableClinics, loading, error } = useClinics({
-    state: stateFilter || null,
-    clinicId: clinicFilter || null,
+    clinicIds: clinicFilters,
   });
   const [selectedClinic, setSelectedClinic] = useState<ClinicFeature | null>(null);
 
@@ -36,7 +31,7 @@ export default function EmbedPage() {
     if (!selectedClinic) {
       return;
     }
-    const exists = clinics.find(
+    const exists = clinics.some(
       (clinic) => identifyClinic(clinic) === identifyClinic(selectedClinic),
     );
     if (!exists) {
@@ -45,7 +40,7 @@ export default function EmbedPage() {
   }, [clinics, selectedClinic]);
 
   useEffect(() => {
-    const seen = new globalThis.Map<string, string>();
+    const seen = new Map<string, string>();
     for (const clinic of availableClinics) {
       const rawId = clinic.properties.clinic_id;
       const id = typeof rawId === 'string' ? rawId.trim().toUpperCase() : null;
@@ -58,23 +53,27 @@ export default function EmbedPage() {
       }
     }
 
-    const options = Array.from(seen.entries())
+    const baseOptions = Array.from(seen.entries())
       .map(([value, label]) => ({ value, label }))
       .sort((a, b) => a.label.localeCompare(b.label));
 
-    if (clinicFilter && !options.some((option) => option.value === clinicFilter)) {
-      const fallbackName = availableClinics.find((clinic) => {
-        const rawId = clinic.properties.clinic_id;
-        const id = typeof rawId === 'string' ? rawId.trim().toUpperCase() : null;
-        return id === clinicFilter;
-      })?.properties.clinic_name?.trim();
-      options.unshift({ value: clinicFilter, label: fallbackName ?? clinicFilter });
-    }
-    setClinicOptions(options);
-  }, [availableClinics, clinicFilter]);
+    const existingValues = new Set(baseOptions.map((option) => option.value));
+    const missingSelections = clinicFilters.filter((value) => !existingValues.has(value));
+    const extras = missingSelections.map((value) => {
+      const fallbackName =
+        availableClinics.find((clinic) => {
+          const rawId = clinic.properties.clinic_id;
+          const id = typeof rawId === 'string' ? rawId.trim().toUpperCase() : null;
+          return id === value;
+        })?.properties.clinic_name?.trim() ?? value;
+      return { value, label: fallbackName };
+    });
+
+    setClinicOptions([...extras, ...baseOptions]);
+  }, [availableClinics, clinicFilters]);
 
   useEffect(() => {
-    if (!clinicFilter) {
+    if (!clinicFilters.length) {
       return;
     }
     if (!clinics.length) {
@@ -90,43 +89,44 @@ export default function EmbedPage() {
       }
       return clinics[0];
     });
-  }, [clinicFilter, clinics]);
-
-  useEffect(() => {
-    setClinicFilter('');
-    setSelectedClinic(null);
-  }, [stateFilter]);
+  }, [clinicFilters, clinics]);
 
   const focusTarget = useMemo<MapFocus>(() => {
     if (selectedClinic) {
       return { type: 'clinic', clinic: selectedClinic };
     }
-    if (stateFilter && clinics.length) {
+    if (clinicFilters.length && clinics.length) {
       const bounds = computeBounds(clinics);
       if (bounds) {
         return { type: 'bounds', bounds };
       }
     }
     return null;
-  }, [selectedClinic, stateFilter, clinics]);
+  }, [selectedClinic, clinicFilters.length, clinics]);
 
   const totalLocations = useMemo(() => clinics.length, [clinics.length]);
 
-  const handleClinicFilterChange = (value: string) => {
-    const normalizedValue = value.trim().toUpperCase();
-    setClinicFilter(normalizedValue);
-    if (!normalizedValue) {
-      setSelectedClinic(null);
-      return;
-    }
+  const handleClinicFilterChange = (values: string[]) => {
+    const normalized = Array.from(
+      new Set(
+        values
+          .map((value) => value.trim().toUpperCase())
+          .filter((value) => value.length > 0),
+      ),
+    );
 
-    const matchingClinic = availableClinics.find((clinic) => {
-      const rawId = clinic.properties.clinic_id;
-      return typeof rawId === 'string' && rawId.trim().toUpperCase() === normalizedValue;
+    setClinicFilters((current) => {
+      if (
+        current.length === normalized.length &&
+        current.every((value, index) => value === normalized[index])
+      ) {
+        return current;
+      }
+      return normalized;
     });
 
-    if (matchingClinic) {
-      setSelectedClinic(matchingClinic);
+    if (!normalized.length) {
+      setSelectedClinic(null);
     }
   };
 
@@ -140,17 +140,11 @@ export default function EmbedPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <StateFilter
-            value={stateFilter}
-            options={states}
-            onChange={setStateFilter}
-            disabled={statesLoading}
-          />
           <ClinicFilter
-            value={clinicFilter}
+            values={clinicFilters}
             options={clinicOptions}
             onChange={handleClinicFilterChange}
-            disabled={loading && !clinicFilter}
+            disabled={loading && !availableClinics.length}
           />
         </div>
       </header>
@@ -211,16 +205,3 @@ function computeBounds(clinics: ClinicFeature[]): [[number, number], [number, nu
     [maxLat, maxLng],
   ];
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

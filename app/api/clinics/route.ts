@@ -39,9 +39,15 @@ WITH base AS (
     ao.WINDOW_START_AT,
     ao.WINDOW_END_AT,
     ao.SLOTS_AVAILABLE,
-    ao.TOTAL_SLOTS_OFFERED,
-    ao.SLOTS_BOOKED,
-    ao.FILL_RATE_PCT,
+
+-- Total slots offered = max(computed value, actual available slots)
+GREATEST(((ao.source_total_available_slots * 7) / 30)::int, ao.SLOTS_AVAILABLE) AS TOTAL_SLOTS_OFFERED,
+
+-- Slots booked = total offered - available
+GREATEST(((ao.source_total_available_slots * 7) / 30)::int, ao.SLOTS_AVAILABLE) - ao.SLOTS_AVAILABLE AS SLOTS_BOOKED,
+
+-- Fill rate percentage
+(1 - (ao.SLOTS_AVAILABLE::numeric / NULLIFZERO(GREATEST(((ao.source_total_available_slots * 7) / 30)::int, ao.SLOTS_AVAILABLE)))) * 100 AS FILL_RATE_PCT,
     ao.NEXT_AVAILABLE_SLOT_DATETIME,
     ao.LEAD_TIME_HOURS_TO_NEXT_AVAILABLE,
     ao.AVG_LEAD_TIME_HOURS,
@@ -58,6 +64,10 @@ SELECT
   c.CLINIC_NAME,
   c.CITY,
   c.STATE,
+  c.WEBSITE_URL,
+  c.PHONE_NUMBER AS PHONE_NUMBER,
+  c.BOOKING_LINK AS BOOKING_LINK,
+  c.FULL_ADDRESS AS FULL_ADDRESS,
   C.LATITUDE,
   C.LONGITUDE,
   ov.WINDOW_DAYS,
@@ -153,6 +163,10 @@ function transformRow(row: Record<string, unknown>): ClinicFeature | null {
     ),
     city: toStringOrNull(row.CITY ?? row.city),
     state: toStringOrNull(row.STATE ?? row.state),
+    full_address: toStringOrNull(row.FULL_ADDRESS ?? row.full_address),
+    website_url: toStringOrNull(row.WEBSITE_URL ?? row.website_url),
+    phone_number: toStringOrNull(row.PHONE_NUMBER ?? row.phone_number),
+    booking_link: toStringOrNull(row.BOOKING_LINK ?? row.booking_link),
   } as const;
 
   return {

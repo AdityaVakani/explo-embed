@@ -9,10 +9,15 @@ type SidebarProps = {
   error: string | null;
 };
 
-type MetricKey = 'rank' | 'slots_available' | 'slots_booked' | 'total_slots_offered' | 'fill_rate_pct';
+type MetricKey = 'slots_available' | 'slots_booked' | 'total_slots_offered' | 'fill_rate_pct';
 
-const METRICS: Array<{ key: MetricKey; label: string; format?: (value: number | null) => string }> = [
-  { key: 'rank', label: 'Rank' },
+type MetricDefinition = {
+  key: MetricKey;
+  label: string;
+  format?: (value: number | null) => string;
+};
+
+const METRICS: MetricDefinition[] = [
   { key: 'slots_available', label: 'Available Slots' },
   { key: 'slots_booked', label: 'Booked Slots' },
   { key: 'total_slots_offered', label: 'Total Slots' },
@@ -65,6 +70,10 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
   const safeState = properties.state ? escapeHtml(properties.state) : null;
   const safeClinicId = properties.clinic_id ? escapeHtml(properties.clinic_id) : null;
   const safePetTypes = properties.pet_types_available ? escapeHtml(String(properties.pet_types_available)) : null;
+  const safeAddress = properties.full_address ? escapeHtml(properties.full_address) : null;
+  const safePhone = properties.phone_number ? escapeHtml(properties.phone_number) : null;
+  const websiteLink = buildLink(properties.website_url);
+  const bookingLink = buildLink(properties.booking_link);
 
   return (
     <aside className="flex h-full w-[300px] flex-col gap-6 border-r border-slate-200 bg-white px-6 py-8 text-sm text-slate-700">
@@ -78,19 +87,59 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
         {safePetTypes ? (
           <div className="text-xs text-slate-500">Pet types: <span className="text-slate-700">{safePetTypes}</span></div>
         ) : null}
+        {safeAddress ? (
+          <div className="text-xs text-slate-500">Address: <span className="text-slate-700">{safeAddress}</span></div>
+        ) : null}
+        {websiteLink ? (
+          <div className="text-xs text-slate-500">
+            Website:{' '}
+            <a
+              className="text-slate-700 underline decoration-slate-300 transition hover:text-slate-900"
+              href={websiteLink.href}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {websiteLink.label}
+            </a>
+          </div>
+        ) : null}
+        {safePhone ? (
+          <div className="text-xs text-slate-500">Phone: <span className="text-slate-700">{safePhone}</span></div>
+        ) : null}
+        {bookingLink ? (
+          <div className="text-xs text-slate-500">
+            Booking:{' '}
+            <a
+              className="text-slate-700 underline decoration-slate-300 transition hover:text-slate-900"
+              href={bookingLink.href}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {bookingLink.label}
+            </a>
+          </div>
+        ) : null}
       </header>
 
       <section className="space-y-3">
         <h3 className="text-xs uppercase tracking-[0.3em] text-slate-500">Utilization</h3>
         <div className="space-y-2 text-xs">
-          {METRICS.map(({ key, label, format }) => (
-            <div key={key} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-100 px-3 py-2">
-              <span className="text-slate-500">{label}</span>
-              <span className="font-semibold text-slate-900">
-                {format ? format(properties[key]) : formatNumber(properties[key])}
-              </span>
-            </div>
-          ))}
+          {METRICS.map(({ key, label, format }) => {
+            const rawValue = properties[key];
+            const isMissing = rawValue === null || rawValue === undefined || Number.isNaN(rawValue);
+            const displayValue = format ? format(rawValue) : formatNumber(rawValue);
+            return (
+              <div
+                key={key}
+                className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-100 px-3 py-2"
+              >
+                <span className="text-slate-500">{label}</span>
+                <span className={`font-semibold ${isMissing ? 'text-slate-400 italic' : 'text-slate-900'}`}>
+                  {displayValue}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </section>
     </aside>
@@ -115,11 +164,40 @@ function formatNumber(value: number | null): string {
 
 function formatRate(value: number | null): string {
   if (value === null || value === undefined || Number.isNaN(value)) {
-    return '-';
+    return 'No data';
   }
 
-  return `${value.toFixed(1)}%`;
+  return `${Math.round(value)}%`;
 }
 
+type LinkDetails = {
+  href: string;
+  label: string;
+};
 
+function buildLink(raw: string | null): LinkDetails | null {
+  if (!raw) {
+    return null;
+  }
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return null;
+  }
 
+  const normalized = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    const url = new URL(normalized);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+
+    const label = trimmed.replace(/^https?:\/\//i, '') || url.hostname;
+    return {
+      href: url.toString(),
+      label,
+    };
+  } catch {
+    return null;
+  }
+}

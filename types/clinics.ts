@@ -24,6 +24,10 @@ export type ClinicMetrics = {
   snapshot_ingested_at: string | null;
   city: string | null;
   state: string | null;
+  full_address: string | null;
+  website_url: string | null;
+  phone_number: string | null;
+  booking_link: string | null;
 };
 
 export type ClinicFeature = {
