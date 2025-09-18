@@ -80,6 +80,9 @@ export default function EmbedPage() {
       setSelectedClinic(null);
       return;
     }
+    if (clinicFilters.length !== 1) {
+      return;
+    }
     setSelectedClinic((current) => {
       if (
         current &&
@@ -125,7 +128,7 @@ export default function EmbedPage() {
       return normalized;
     });
 
-    if (!normalized.length) {
+    if (normalized.length !== 1) {
       setSelectedClinic(null);
     }
   };
