@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 export type ClinicFilterOption = { value: string; label: string };
 
@@ -15,6 +15,7 @@ export function ClinicFilter({ values, options, onChange, disabled }: ClinicFilt
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -48,6 +49,20 @@ export function ClinicFilter({ values, options, onChange, disabled }: ClinicFilt
   useEffect(() => {
     if (!open) {
       setSearchTerm('');
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const input = searchInputRef.current;
+    if (input) {
+      input.focus();
+      const length = input.value.length;
+      if (typeof input.setSelectionRange === 'function') {
+        input.setSelectionRange(length, length);
+      }
     }
   }, [open]);
 
@@ -85,6 +100,24 @@ export function ClinicFilter({ values, options, onChange, disabled }: ClinicFilt
       return;
     }
     setOpen((value) => !value);
+  };
+
+  const handleButtonKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (disabled) {
+      return;
+    }
+    const { key } = event;
+    if (key === 'Enter' || key === ' ' || key === 'ArrowDown') {
+      event.preventDefault();
+      setOpen(true);
+      return;
+    }
+    const isPrintable = key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
+    if (isPrintable) {
+      event.preventDefault();
+      setOpen(true);
+      setSearchTerm(key);
+    }
   };
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -133,6 +166,7 @@ export function ClinicFilter({ values, options, onChange, disabled }: ClinicFilt
             : 'border-slate-300 bg-white hover:border-slate-400'
         }`}
         onClick={toggleOpen}
+        onKeyDown={handleButtonKeyDown}
         disabled={disabled}
         aria-expanded={open}
         aria-haspopup="listbox"
@@ -162,10 +196,13 @@ export function ClinicFilter({ values, options, onChange, disabled }: ClinicFilt
       {open ? (
         <div className="absolute right-0 top-full z-20 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-3 text-xs shadow-xl">
           <input
+            ref={searchInputRef}
             type="text"
             value={searchTerm}
             onChange={handleSearchChange}
             placeholder="Search clinics..."
+            autoComplete="off"
+            spellCheck={false}
             className="w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-2 text-sm text-slate-700 outline-none transition focus:border-slate-400 focus:bg-white"
           />
           <div className="mt-3 max-h-60 overflow-auto rounded-md border border-slate-100">
