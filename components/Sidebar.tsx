@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from 'react';
+
 import { escapeHtml } from '@/lib/utils';
 import type { ClinicFeature } from '@/types/clinics';
 
@@ -15,6 +17,12 @@ type MetricDefinition = {
   key: MetricKey;
   label: string;
   format?: (value: number | null) => string;
+};
+
+type DetailItem = {
+  key: string;
+  label: string;
+  content: ReactNode;
 };
 
 const METRICS: MetricDefinition[] = [
@@ -75,49 +83,71 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
   const websiteLink = buildLink(properties.website_url);
   const bookingLink = buildLink(properties.booking_link);
 
+  const location = [safeCity, safeState].filter(Boolean).join(', ') || null;
+  const detailItems: DetailItem[] = [];
+
+  if (location) {
+    detailItems.push({ key: 'location', label: 'Location', content: location });
+  }
+  if (safeClinicId) {
+    detailItems.push({ key: 'clinicId', label: 'Clinic ID', content: safeClinicId });
+  }
+  if (safePetTypes) {
+    detailItems.push({ key: 'petTypes', label: 'Pet types', content: safePetTypes });
+  }
+  if (safeAddress) {
+    detailItems.push({ key: 'address', label: 'Address', content: safeAddress });
+  }
+  if (websiteLink) {
+    detailItems.push({
+      key: 'website',
+      label: 'Website',
+      content: (
+        <a
+          className="break-words text-slate-700 underline decoration-slate-300 transition hover:text-slate-900"
+          href={websiteLink.href}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {websiteLink.label}
+        </a>
+      ),
+    });
+  }
+  if (safePhone) {
+    detailItems.push({ key: 'phone', label: 'Phone', content: safePhone });
+  }
+  if (bookingLink) {
+    detailItems.push({
+      key: 'booking',
+      label: 'Booking',
+      content: (
+        <a
+          className="break-words text-slate-700 underline decoration-slate-300 transition hover:text-slate-900"
+          href={bookingLink.href}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {bookingLink.label}
+        </a>
+      ),
+    });
+  }
+
   return (
     <aside className="flex h-full w-[300px] flex-col gap-6 border-r border-slate-200 bg-white px-6 py-8 text-sm text-slate-700">
-      <header className="space-y-2">
-        <div className="text-xs uppercase tracking-[0.2em] text-slate-500">Selected clinic</div>
-        <h2 className="text-xl font-semibold text-slate-900">{safeName}</h2>
-        <div className="text-xs text-slate-500">{[safeCity, safeState].filter(Boolean).join(', ')}</div>
-        {safeClinicId ? (
-          <div className="text-xs text-slate-500">ID: <span className="text-slate-700">{safeClinicId}</span></div>
-        ) : null}
-        {safePetTypes ? (
-          <div className="text-xs text-slate-500">Pet types: <span className="text-slate-700">{safePetTypes}</span></div>
-        ) : null}
-        {safeAddress ? (
-          <div className="text-xs text-slate-500">Address: <span className="text-slate-700">{safeAddress}</span></div>
-        ) : null}
-        {websiteLink ? (
-          <div className="text-xs text-slate-500">
-            Website:{' '}
-            <a
-              className="text-slate-700 underline decoration-slate-300 transition hover:text-slate-900"
-              href={websiteLink.href}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {websiteLink.label}
-            </a>
-          </div>
-        ) : null}
-        {safePhone ? (
-          <div className="text-xs text-slate-500">Phone: <span className="text-slate-700">{safePhone}</span></div>
-        ) : null}
-        {bookingLink ? (
-          <div className="text-xs text-slate-500">
-            Booking:{' '}
-            <a
-              className="text-slate-700 underline decoration-slate-300 transition hover:text-slate-900"
-              href={bookingLink.href}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {bookingLink.label}
-            </a>
-          </div>
+      <header className="space-y-4">
+        <div className="text-[0.65rem] uppercase tracking-[0.3em] text-slate-500">Selected clinic</div>
+        <h2 className="text-xl font-semibold text-slate-900 break-words">{safeName}</h2>
+        {detailItems.length ? (
+          <dl className="space-y-3">
+            {detailItems.map(({ key, label, content }) => (
+              <div key={key} className="space-y-1">
+                <dt className="text-[0.65rem] uppercase tracking-[0.3em] text-slate-500">{label}</dt>
+                <dd className="text-xs text-slate-700 break-words">{content}</dd>
+              </div>
+            ))}
+          </dl>
         ) : null}
       </header>
 
