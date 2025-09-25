@@ -141,8 +141,6 @@ function ClinicMarker({ clinic, selected, zoom, onSelect }: ClinicMarkerProps) {
         <div className="space-y-1">
           <div className="text-sm font-semibold text-slate-900">{safeName}</div>
           <div className="text-xs text-slate-600 space-y-0.5">
-            <div>Score: {formatValue(properties.score)}</div>
-            <div>Rank: {formatValue(properties.rank)}</div>
             <div>Total slots: {formatValue(properties.total_slots_offered)}</div>
             <div>Booked slots: {formatValue(properties.slots_booked)}</div>
             <div>Fill rate: {formatRate(properties.fill_rate_pct)}</div>
