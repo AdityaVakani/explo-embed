@@ -29,7 +29,7 @@ const identifyClinic = (clinic: ClinicFeature) =>
 
 const DEFAULT_CENTER: [number, number] = [37.0902, -95.7129];
 const DEFAULT_ZOOM = 4;
-const TILE_LAYER_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+const TILE_LAYER_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 const TILE_ATTRIBUTION =
   "&copy; <a href='https://carto.com/attributions'>CARTO</a> | &copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors";
 
