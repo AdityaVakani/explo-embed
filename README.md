@@ -36,7 +36,7 @@ Required values:
 
 - `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USERNAME`, `SNOWFLAKE_PASSWORD`
 - `SNOWFLAKE_WAREHOUSE`, `SNOWFLAKE_DATABASE`, `SNOWFLAKE_SCHEMA`, `SNOWFLAKE_ROLE`
-- `ALLOWED_EMBED_HOSTNAMES` – space-separated hostnames allowed to embed the app (e.g. `app.explo.co *.explo.co`).
+- `ALLOWED_EMBED_HOSTNAMES` - space-separated hostnames allowed to embed the app (e.g. `app.explo.co *.explo.co explo-embed.vercel.app vet.shyftops.io`).
 
 Optional helper:
 

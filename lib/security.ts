@@ -14,6 +14,8 @@ type TokenBucket = {
   lastRefill: number;
 };
 
+const DEFAULT_ALLOWED_HOSTS = ['app.explo.co', '*.explo.co', 'explo-embed.vercel.app', 'vet.shyftops.io'];
+
 const buckets = new Map<string, TokenBucket>();
 const MAX_TOKENS = 60;
 const REFILL_INTERVAL_MS = 60_000;
@@ -59,10 +61,12 @@ function normalizeAllowedEntry(entry: string): string | null {
 
 function getAllowList(): string[] {
   const raw = process.env.ALLOWED_EMBED_HOSTNAMES ?? '';
-  return raw
-    .split(/\s+/)
+  const entries = [...DEFAULT_ALLOWED_HOSTS, ...raw.split(/\s+/)];
+  const normalized = entries
     .map((entry) => normalizeAllowedEntry(entry))
     .filter((value): value is string => Boolean(value));
+
+  return Array.from(new Set(normalized));
 }
 
 export function sanitizeState(value: string | null | undefined): string {

@@ -1,8 +1,9 @@
+const DEFAULT_ALLOWED_HOSTS = ['app.explo.co', '*.explo.co', 'explo-embed.vercel.app', 'vet.shyftops.io'];
 const rawAllowedHosts = process.env.ALLOWED_EMBED_HOSTNAMES ?? '';
 
 function normalizeHost(entry) {
   if (!entry) return null;
-  const unquoted = entry.trim().replace(/^['"]+|['"]+$/g, '');
+  const unquoted = entry.trim().replace(/^['\"]+|['\"]+$/g, '');
   if (!unquoted) return null;
   const lowered = unquoted.toLowerCase();
   if (lowered.includes('*')) {
@@ -18,10 +19,11 @@ function normalizeHost(entry) {
   return lowered;
 }
 
-const allowedHosts = rawAllowedHosts
-  .split(/\s+/)
+const normalizedAllowedHosts = [...DEFAULT_ALLOWED_HOSTS, ...rawAllowedHosts.split(/\s+/)]
   .map((value) => normalizeHost(value))
-  .filter((value) => value);
+  .filter((value) => Boolean(value));
+
+const allowedHosts = Array.from(new Set(normalizedAllowedHosts));
 
 function withHttpsPrefix(host) {
   if (!host) return host;
