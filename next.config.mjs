@@ -38,10 +38,10 @@ function createContentSecurityPolicy() {
 
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com",
-    "connect-src 'self'",
+    "connect-src 'self' https://vercel.live wss://vercel.live",
     `frame-ancestors ${frameAncestors.join(' ')}`,
   ].join('; ');
 }
@@ -79,3 +79,4 @@ const nextConfig = {
 };
 
 export default nextConfig;
+
