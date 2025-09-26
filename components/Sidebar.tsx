@@ -157,6 +157,7 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
 
       <section className="space-y-3">
         <h3 className="text-xs uppercase tracking-[0.3em] text-slate-500">Utilization</h3>
+        <p className="text-[10px] text-slate-400">Metrics reflect a 7-day window.</p>
         <div className="space-y-2 text-xs">
           {METRICS.map(({ key, label, format }) => {
             const rawValue = properties[key];
