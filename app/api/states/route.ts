@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { isAllowedOrigin, rateLimit } from '@/lib/security';
 import { runSnowflakeQuery } from '@/lib/snowflake';
@@ -6,7 +6,7 @@ import { getClientIp } from '@/lib/utils';
 
 const STATES_SQL = `
 SELECT DISTINCT UPPER(STATE) AS STATE
-FROM VETSTORIA_POC.PUBLIC.CLINICS_MASTER
+FROM VET_CLINIC_HOSPITAL.PUBLIC.CLINICS_MASTER
 WHERE STATE IS NOT NULL AND TRIM(STATE) <> ''
 ORDER BY STATE
 `;
@@ -45,4 +45,3 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-

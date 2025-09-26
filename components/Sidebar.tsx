@@ -80,11 +80,16 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
   const safePetTypes = properties.pet_types_available ? escapeHtml(String(properties.pet_types_available)) : null;
   const safeAddress = properties.full_address ? escapeHtml(properties.full_address) : null;
   const safePhone = properties.phone_number ? escapeHtml(properties.phone_number) : null;
+  const safeBms = properties.bms_system ? escapeHtml(properties.bms_system) : null;
   const websiteLink = buildLink(properties.website_url);
-  const bookingLink = buildLink(properties.booking_link);
 
   const location = [safeCity, safeState].filter(Boolean).join(', ') || null;
   const detailItems: DetailItem[] = [];
+
+  const leadTimeValue = properties.appointment_lead_time_hours;
+  const leadTimeMissing =
+    leadTimeValue === null || leadTimeValue === undefined || Number.isNaN(leadTimeValue);
+  const leadTimeDisplay = leadTimeMissing ? 'No data' : `${formatNumber(leadTimeValue)} Hours`;
 
   if (location) {
     detailItems.push({ key: 'location', label: 'Location', content: location });
@@ -117,21 +122,8 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
   if (safePhone) {
     detailItems.push({ key: 'phone', label: 'Phone', content: safePhone });
   }
-  if (bookingLink) {
-    detailItems.push({
-      key: 'booking',
-      label: 'Booking',
-      content: (
-        <a
-          className="break-words text-slate-700 underline decoration-slate-300 transition hover:text-slate-900"
-          href={bookingLink.href}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {bookingLink.label}
-        </a>
-      ),
-    });
+  if (safeBms) {
+    detailItems.push({ key: 'bms', label: 'BMS', content: safeBms });
   }
 
   return (
@@ -150,6 +142,18 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
           </dl>
         ) : null}
       </header>
+
+      <section className="space-y-3">
+        <h3 className="text-xs uppercase tracking-[0.3em] text-slate-500">Access Snapshot</h3>
+        <div className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-500">Average Lead Time</span>
+            <span className={`font-semibold ${leadTimeMissing ? 'text-slate-400 italic' : 'text-slate-900'}`}>
+              {leadTimeDisplay}
+            </span>
+          </div>
+        </div>
+      </section>
 
       <section className="space-y-3">
         <h3 className="text-xs uppercase tracking-[0.3em] text-slate-500">Utilization</h3>

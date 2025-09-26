@@ -14,6 +14,7 @@ export type ClinicMetrics = {
   slots_booked: number | null;
   fill_rate_pct: number | null;
   lead_time_hours_to_next_available: number | null;
+  appointment_lead_time_hours: number | null;
   avg_lead_time_hours: number | null;
   available_pct_peak: number | null;
   available_pct_offpeak: number | null;
@@ -27,7 +28,8 @@ export type ClinicMetrics = {
   full_address: string | null;
   website_url: string | null;
   phone_number: string | null;
-  booking_link: string | null;
+  bms_system: string | null;
+  doctor_count: number | null;
 };
 
 export type ClinicFeature = {

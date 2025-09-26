@@ -7,101 +7,35 @@ import { getClientIp, normalizeClinicId, normalizeState, STATE_NAME_TO_CODE } fr
 import { ClinicFeature } from '@/types/clinics';
 
 const COORDINATE_FILTER = `(
-  (c.LATITUDE BETWEEN 24.396308 AND 49.0 AND c.LONGITUDE BETWEEN -125.0 AND -66.93457)
-  OR (c.LATITUDE BETWEEN 51.214183 AND 71.5388 AND c.LONGITUDE BETWEEN -179.148909 AND -129.9795)
-  OR (c.LATITUDE BETWEEN 18.910361 AND 22.2356 AND c.LONGITUDE BETWEEN -160.2471 AND -154.8068)
+  (cm.LATITUDE BETWEEN 24.396308 AND 49.0 AND cm.LONGITUDE BETWEEN -125.0 AND -66.93457)
+  OR (cm.LATITUDE BETWEEN 51.214183 AND 71.5388 AND cm.LONGITUDE BETWEEN -179.148909 AND -129.9795)
+  OR (cm.LATITUDE BETWEEN 18.910361 AND 22.2356 AND cm.LONGITUDE BETWEEN -160.2471 AND -154.8068)
 )`;
 const CLINIC_SQL = `
-WITH base AS (
-    SELECT CLINIC_ID, SNAPSHOT_ID, SNAPSHOT_INGESTED_AT
-    FROM (
-      WITH ranked AS (
-        SELECT
-          CLINIC_ID,
-          SNAPSHOT_ID,
-          INGESTED_AT,
-          ROW_NUMBER() OVER (
-            PARTITION BY CLINIC_ID
-            ORDER BY INGESTED_AT DESC
-          ) AS rn
-        FROM VETSTORIA_POC.PUBLIC.RAW_BOOKING_EXTRACTS
-      )
-      SELECT CLINIC_ID, SNAPSHOT_ID,  INGESTED_AT AS SNAPSHOT_INGESTED_AT
-      FROM ranked WHERE rn = 1
-    )
-    )
-
-    ,ovw AS (
-  SELECT
-    ao.SNAPSHOT_ID,
-    ao.CLINIC_ID,
-    ao.WINDOW_DAYS,
-    ao.WINDOW_START_AT,
-    ao.WINDOW_END_AT,
-    ao.SLOTS_AVAILABLE,
-
--- Total slots offered = max(computed value, actual available slots)
-GREATEST(((ao.source_total_available_slots * 7) / 30)::int, ao.SLOTS_AVAILABLE) AS TOTAL_SLOTS_OFFERED,
-
--- Slots booked = total offered - available
-GREATEST(((ao.source_total_available_slots * 7) / 30)::int, ao.SLOTS_AVAILABLE) - ao.SLOTS_AVAILABLE AS SLOTS_BOOKED,
-
--- Fill rate percentage
-(1 - (ao.SLOTS_AVAILABLE::numeric / NULLIFZERO(GREATEST(((ao.source_total_available_slots * 7) / 30)::int, ao.SLOTS_AVAILABLE)))) * 100 AS FILL_RATE_PCT,
-    ao.NEXT_AVAILABLE_SLOT_DATETIME,
-    ao.LEAD_TIME_HOURS_TO_NEXT_AVAILABLE,
-    ao.AVG_LEAD_TIME_HOURS,
-    ao.AVAILABLE_PCT_PEAK,
-    ao.AVAILABLE_PCT_OFFPEAK,
-    ao.PEAK_DEFINITION_TEXT,
-    ao.TOTAL_APPOINTMENT_TYPES,
-    ao.PET_TYPES_AVAILABLE,
-    ao.TOTAL_PETS_SUPPORTED
-  FROM VETSTORIA_POC.PUBLIC.AVAILABILITY_OVERVIEW  ao
-)
 SELECT
-  c.CLINIC_ID,
-  c.CLINIC_NAME,
-  c.CITY,
-  c.STATE,
-  c.WEBSITE_URL,
-  c.PHONE_NUMBER AS PHONE_NUMBER,
-  c.BOOKING_LINK AS BOOKING_LINK,
-  c.FULL_ADDRESS AS FULL_ADDRESS,
-  C.LATITUDE,
-  C.LONGITUDE,
-  ov.WINDOW_DAYS,
-  ov.SLOTS_AVAILABLE,
-  COALESCE(ov.TOTAL_SLOTS_OFFERED, NULL) AS TOTAL_SLOTS_OFFERED,
-  COALESCE(ov.SLOTS_BOOKED, ov.TOTAL_SLOTS_OFFERED - ov.SLOTS_AVAILABLE) AS SLOTS_BOOKED,
-  COALESCE(
-    ov.FILL_RATE_PCT,
-    CASE WHEN ov.TOTAL_SLOTS_OFFERED IS NOT NULL AND ov.TOTAL_SLOTS_OFFERED > 0
-         THEN ROUND( (COALESCE(ov.TOTAL_SLOTS_OFFERED,0) - COALESCE(ov.SLOTS_AVAILABLE,0))::FLOAT
-                     / ov.TOTAL_SLOTS_OFFERED * 100, 1)
-    END
-  ) AS FILL_RATE_PCT,
-  ov.LEAD_TIME_HOURS_TO_NEXT_AVAILABLE,
-  ov.AVG_LEAD_TIME_HOURS,
-  ov.AVAILABLE_PCT_PEAK,
-  ov.AVAILABLE_PCT_OFFPEAK,
-  ov.PEAK_DEFINITION_TEXT,
-  ov.TOTAL_APPOINTMENT_TYPES,
-  ov.PET_TYPES_AVAILABLE,
-  ov.TOTAL_PETS_SUPPORTED,
-  a.SNAPSHOT_INGESTED_AT
-FROM base a
-JOIN VETSTORIA_POC.PUBLIC.CLINICS_MASTER c
-  ON c.CLINIC_ID = a.CLINIC_ID
-LEFT JOIN ovw ov
-  ON ov.CLINIC_ID = a.CLINIC_ID
- AND ov.SNAPSHOT_ID = a.SNAPSHOT_ID
-  AND WINDOW_DAYS = 7
+  cm.CLINIC_ID,
+  cm.CLINIC_NAME,
+  cm.CITY,
+  cm.STATE,
+  cm.WEBSITE_URL,
+  cm.PHONE_NUMBER,
+  cm.BMS_SYSTEM,
+  cm.ADDRESS,
+  cm.LATITUDE,
+  cm.LONGITUDE,
+  cm.APPOINTMENT_LEAD_TIME_HOURS,
+  cm.DOCTOR_COUNT,
+  sw.SLOTS_AVAILABLE,
+  IFNULL(sw.ESTIMATED_WEEKLY_SLOT_CAPACITY, cm.ESTIMATED_DAILY_SLOT_CAPACITY * 7) AS TOTAL_SLOTS_OFFERED,
+  sw.SLOTS_BOOKED,
+  (sw.FILL_RATE_PCT * 100)::INT AS FILL_RATE_PCT
+FROM VET_CLINIC_HOSPITAL.PUBLIC.CLINICS_MASTER cm
+LEFT JOIN VET_CLINIC_HOSPITAL.PUBLIC.SUMMARY_WEEK sw
+  ON cm.CLINIC_ID = sw.CLINIC_ID
 WHERE ${COORDINATE_FILTER}
-`;
+`
 
-const ORDER_BY = 'ORDER BY COALESCE(ov.FILL_RATE_PCT, 0) DESC, c.CLINIC_NAME';
-
+const ORDER_BY = 'ORDER BY FILL_RATE_PCT DESC NULLS LAST, cm.CLINIC_NAME';
 
 const CACHE_CONTROL = 's-maxage=120, stale-while-revalidate=300';
 
@@ -145,28 +79,34 @@ function transformRow(row: Record<string, unknown>): ClinicFeature | null {
     slots_booked: toNumber(row.SLOTS_BOOKED ?? row.slots_booked),
     fill_rate_pct: toNumber(row.FILL_RATE_PCT ?? row.fill_rate_pct),
     lead_time_hours_to_next_available: toNumber(
-      row.LEAD_TIME_HOURS_TO_NEXT_AVAILABLE ?? row.lead_time_hours_to_next_available,
+      row.LEAD_TIME_HOURS_TO_NEXT_AVAILABLE ?? row.lead_time_hours_to_next_available
     ),
     avg_lead_time_hours: toNumber(row.AVG_LEAD_TIME_HOURS ?? row.avg_lead_time_hours),
     available_pct_peak: toNumber(row.AVAILABLE_PCT_PEAK ?? row.available_pct_peak),
     available_pct_offpeak: toNumber(row.AVAILABLE_PCT_OFFPEAK ?? row.available_pct_offpeak),
     peak_definition_text: toStringOrNull(
-      row.PEAK_DEFINITION_TEXT ?? row.peak_definition_text,
+      row.PEAK_DEFINITION_TEXT ?? row.peak_definition_text
     ),
     total_appointment_types: toNumber(
-      row.TOTAL_APPOINTMENT_TYPES ?? row.total_appointment_types,
+      row.TOTAL_APPOINTMENT_TYPES ?? row.total_appointment_types
     ),
     pet_types_available: toStringOrNull(row.PET_TYPES_AVAILABLE ?? row.pet_types_available),
     total_pets_supported: toNumber(row.TOTAL_PETS_SUPPORTED ?? row.total_pets_supported),
     snapshot_ingested_at: toStringOrNull(
-      row.SNAPSHOT_INGESTED_AT ?? row.snapshot_ingested_at,
+      row.SNAPSHOT_INGESTED_AT ?? row.snapshot_ingested_at
     ),
     city: toStringOrNull(row.CITY ?? row.city),
     state: toStringOrNull(row.STATE ?? row.state),
-    full_address: toStringOrNull(row.FULL_ADDRESS ?? row.full_address),
+    full_address: toStringOrNull(
+      row.ADDRESS ?? row.address ?? row.FULL_ADDRESS ?? row.full_address
+    ),
     website_url: toStringOrNull(row.WEBSITE_URL ?? row.website_url),
     phone_number: toStringOrNull(row.PHONE_NUMBER ?? row.phone_number),
-    booking_link: toStringOrNull(row.BOOKING_LINK ?? row.booking_link),
+    bms_system: toStringOrNull(row.BMS_SYSTEM ?? row.bms_system),
+    appointment_lead_time_hours: toNumber(
+      row.APPOINTMENT_LEAD_TIME_HOURS ?? row.appointment_lead_time_hours
+    ),
+    doctor_count: toNumber(row.DOCTOR_COUNT ?? row.doctor_count),
   } as const;
 
   return {
@@ -207,12 +147,12 @@ async function fetchClinics(state: string | null, clinicId: string | null): Prom
     }
 
     const placeholders = candidates.map(() => '?').join(', ');
-    conditions.push(`TRIM(UPPER(c.STATE)) IN (${placeholders})`);
+    conditions.push(`TRIM(UPPER(cm.STATE)) IN (${placeholders})`);
     binds.push(...candidates);
   }
 
   if (clinicId) {
-    conditions.push('UPPER(c.CLINIC_ID) = ?');
+    conditions.push('UPPER(cm.CLINIC_ID) = ?');
     binds.push(clinicId);
   }
 
@@ -259,7 +199,3 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
-
-
-
