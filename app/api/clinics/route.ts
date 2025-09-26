@@ -18,7 +18,6 @@ SELECT
   cm.CITY,
   cm.STATE,
   cm.WEBSITE_URL,
-  cm.PHONE_NUMBER,
   cm.BMS_SYSTEM,
   cm.ADDRESS,
   cm.LATITUDE,
