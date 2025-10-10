@@ -180,16 +180,15 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
     const fillRate = day.fillRate;
     const fillRateAvailable = typeof fillRate === 'number' && Number.isFinite(fillRate);
     const fillRateLine = fillRateAvailable
-      ? `Estimated fill rate: ${fillRate.toFixed(1)}%.`
+      ? `Estimated fill rate: ${fillRate.toFixed(1)}%`
       : 'Estimated fill rate: No data.';
     const tooltip = [
       day.longLabel,
       fillRateLine,
       'This is an approximation based on estimated clinic capacity.',
     ].join('\n');
-    const cardTone = slotsMissing
-      ? 'border-slate-200 bg-slate-50'
-      : 'border-slate-200 bg-slate-100';
+    const borderTone = slotsMissing ? 'border-slate-200' : 'border-indigo-200';
+    const backgroundTone = slotsMissing ? 'bg-slate-50' : 'bg-indigo-50';
     const slotsDisplay = formatNumber(slots);
     const slotValueClasses = slotsMissing ? 'text-slate-400 italic' : 'text-slate-900';
     const slotsLabelTone = slotsMissing ? 'text-slate-400' : 'text-slate-500';
@@ -198,11 +197,11 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
       <div
         key={day.key}
         title={tooltip}
-        className={`w-full rounded-lg border px-3 py-2 text-center text-slate-700 shadow-sm transition hover:border-slate-300 ${cardTone}`}
+        className={`flex flex-col items-center rounded-md border ${borderTone} ${backgroundTone} px-2.5 py-1.5 text-center text-slate-700 leading-tight shadow-sm transition hover:border-slate-300`}
       >
-        <div className="text-[0.6rem] uppercase tracking-[0.3em] text-slate-500">{day.label}</div>
+        <div className="text-[0.55rem] uppercase tracking-[0.25em] text-slate-500">{day.label}</div>
         <div className={`text-sm font-semibold ${slotValueClasses}`}>{slotsDisplay}</div>
-        <div className={`text-[10px] ${slotsLabelTone}`}>Slots</div>
+        <div className={`text-[9px] uppercase tracking-wide ${slotsLabelTone}`}>Slots</div>
       </div>
     );
   };
@@ -237,18 +236,6 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
       </section>
 
       <section className="space-y-3">
-        <h3 className="text-xs uppercase tracking-[0.3em] text-slate-500">Weekday Availability</h3>
-        <div className="flex flex-col gap-2 text-xs">
-          <div className="grid grid-cols-3 gap-2">
-            {topRow.map(renderWeekdayCard)}
-          </div>
-          <div className="grid grid-cols-2 gap-2 px-6">
-            {bottomRow.map(renderWeekdayCard)}
-          </div>
-        </div>
-      </section>
-
-      <section className="space-y-3">
         <h3 className="text-xs uppercase tracking-[0.3em] text-slate-500">Utilization</h3>
         <p className="text-[10px] text-slate-400">Metrics reflect a 7-day window.</p>
         <div className="space-y-2 text-xs">
@@ -268,6 +255,18 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h3 className="text-xs uppercase tracking-[0.3em] text-slate-500">Weekday Availability</h3>
+        <div className="flex flex-col gap-1.5 text-[11px]">
+          <div className="grid grid-cols-3 gap-1.5">
+            {topRow.map(renderWeekdayCard)}
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 px-3">
+            {bottomRow.map(renderWeekdayCard)}
+          </div>
         </div>
       </section>
     </aside>
