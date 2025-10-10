@@ -198,11 +198,11 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
       <div
         key={day.key}
         title={tooltip}
-        className={`flex flex-col items-center rounded-md border ${borderTone} ${backgroundTone} px-2 py-0.5 text-center text-slate-700 leading-tight shadow-sm transition hover:border-slate-300`}
+        className={`flex flex-col items-center rounded-md border ${borderTone} ${backgroundTone} px-1.5 py-0.5 text-center text-slate-700 leading-tight transition hover:border-slate-300`}
       >
-        <div className="text-[0.55rem] uppercase tracking-[0.25em] text-slate-500">{day.label}</div>
-        <div className={`text-sm font-semibold ${slotValueClasses}`}>{slotsDisplay}</div>
-        <div className={`text-[9px] uppercase tracking-wide ${slotsLabelTone}`}>Slots</div>
+        <div className="text-[0.5rem] uppercase tracking-[0.2em] text-slate-500">{day.label}</div>
+        <div className={`text-[0.7rem] font-semibold ${slotValueClasses}`}>{slotsDisplay}</div>
+        <div className={`text-[8px] uppercase tracking-[0.25em] ${slotsLabelTone}`}>Slots</div>
       </div>
     );
   };
