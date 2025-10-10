@@ -25,6 +25,14 @@ type DetailItem = {
   content: ReactNode;
 };
 
+type WeekdayCard = {
+  key: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday';
+  label: string;
+  longLabel: string;
+  slots: number | null;
+  fillRate: number | null;
+};
+
 const METRICS: MetricDefinition[] = [
   { key: 'slots_available', label: 'Available Slots' },
   { key: 'slots_booked', label: 'Booked Slots' },
@@ -126,6 +134,79 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
     detailItems.push({ key: 'bms', label: 'BMS', content: safeBms });
   }
 
+  const weekdayCards: WeekdayCard[] = [
+    {
+      key: 'monday',
+      label: 'Mon',
+      longLabel: 'Monday',
+      slots: properties.monday_slots,
+      fillRate: properties.monday_fill_rate_pct,
+    },
+    {
+      key: 'tuesday',
+      label: 'Tue',
+      longLabel: 'Tuesday',
+      slots: properties.tuesday_slots,
+      fillRate: properties.tuesday_fill_rate_pct,
+    },
+    {
+      key: 'wednesday',
+      label: 'Wed',
+      longLabel: 'Wednesday',
+      slots: properties.wednesday_slots,
+      fillRate: properties.wednesday_fill_rate_pct,
+    },
+    {
+      key: 'thursday',
+      label: 'Thu',
+      longLabel: 'Thursday',
+      slots: properties.thursday_slots,
+      fillRate: properties.thursday_fill_rate_pct,
+    },
+    {
+      key: 'friday',
+      label: 'Fri',
+      longLabel: 'Friday',
+      slots: properties.friday_slots,
+      fillRate: properties.friday_fill_rate_pct,
+    },
+  ];
+  const topRow = weekdayCards.slice(0, 3);
+  const bottomRow = weekdayCards.slice(3);
+
+  const renderWeekdayCard = (day: WeekdayCard) => {
+    const slots = day.slots;
+    const slotsMissing = slots === null || slots === undefined || Number.isNaN(slots);
+    const fillRate = day.fillRate;
+    const fillRateAvailable = typeof fillRate === 'number' && Number.isFinite(fillRate);
+    const fillRateLine = fillRateAvailable
+      ? `Estimated fill rate: ${fillRate.toFixed(1)}%.`
+      : 'Estimated fill rate: No data.';
+    const tooltip = [
+      day.longLabel,
+      fillRateLine,
+      'This is an approximation based on estimated clinic capacity.',
+    ].join('\n');
+    const cardTone = slotsMissing
+      ? 'border-slate-200 bg-slate-50'
+      : 'border-slate-200 bg-slate-100';
+    const slotsDisplay = formatNumber(slots);
+    const slotValueClasses = slotsMissing ? 'text-slate-400 italic' : 'text-slate-900';
+    const slotsLabelTone = slotsMissing ? 'text-slate-400' : 'text-slate-500';
+
+    return (
+      <div
+        key={day.key}
+        title={tooltip}
+        className={`w-full rounded-lg border px-3 py-2 text-center text-slate-700 shadow-sm transition hover:border-slate-300 ${cardTone}`}
+      >
+        <div className="text-[0.6rem] uppercase tracking-[0.3em] text-slate-500">{day.label}</div>
+        <div className={`text-sm font-semibold ${slotValueClasses}`}>{slotsDisplay}</div>
+        <div className={`text-[10px] ${slotsLabelTone}`}>Slots</div>
+      </div>
+    );
+  };
+
   return (
     <aside className="flex h-full w-[300px] flex-col gap-6 border-r border-slate-200 bg-white px-6 py-8 text-sm text-slate-700">
       <header className="space-y-4">
@@ -151,6 +232,18 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
             <span className={`font-semibold ${leadTimeMissing ? 'text-slate-400 italic' : 'text-slate-900'}`}>
               {leadTimeDisplay}
             </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-xs uppercase tracking-[0.3em] text-slate-500">Weekday Availability</h3>
+        <div className="flex flex-col gap-2 text-xs">
+          <div className="grid grid-cols-3 gap-2">
+            {topRow.map(renderWeekdayCard)}
+          </div>
+          <div className="grid grid-cols-2 gap-2 px-6">
+            {bottomRow.map(renderWeekdayCard)}
           </div>
         </div>
       </section>

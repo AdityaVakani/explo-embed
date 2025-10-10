@@ -12,6 +12,71 @@ const COORDINATE_FILTER = `(
   OR (cm.LATITUDE BETWEEN 18.910361 AND 22.2356 AND cm.LONGITUDE BETWEEN -160.2471 AND -154.8068)
 )`;
 const CLINIC_SQL = `
+WITH clinic_master AS (
+  SELECT *
+  FROM VET_CLINIC_HOSPITAL.PUBLIC.CLINICS_MASTER cm
+  WHERE ${COORDINATE_FILTER}
+),
+base AS (
+  SELECT
+    s.CLINIC_ID,
+    cmf.CLINIC_NAME,
+    cmf.ESTIMATED_DAILY_SLOT_CAPACITY AS daily_capacity,
+    CAST(s.SLOT_START_AT AS DATE) AS day,
+    s.SLOT_ID
+  FROM VET_CLINIC_HOSPITAL.PUBLIC.SLOT_LEVEL_AVAILABILITY s
+  JOIN clinic_master cmf
+    ON cmf.CLINIC_ID = s.CLINIC_ID
+),
+per_day AS (
+  SELECT
+    CLINIC_ID,
+    CLINIC_NAME,
+    daily_capacity,
+    DAYOFWEEKISO(day) AS dow,
+    COUNT(DISTINCT SLOT_ID) AS slots_per_day
+  FROM base
+  GROUP BY 1,2,3,4
+),
+weekday_avg AS (
+  SELECT
+    CLINIC_ID,
+    CLINIC_NAME,
+    daily_capacity,
+    dow,
+    AVG(slots_per_day) AS avg_slots_per_weekday
+  FROM per_day
+  WHERE dow BETWEEN 1 AND 5
+  GROUP BY 1,2,3,4
+),
+weekday_metrics AS (
+  SELECT
+    CLINIC_ID,
+    MAX(CLINIC_NAME) AS CLINIC_NAME,
+    MAX(daily_capacity) AS ESTIMATED_DAILY_SLOT_CAPACITY,
+    ROUND(SUM(IFF(dow = 1, avg_slots_per_weekday, NULL)), 0) AS MONDAY_SLOTS,
+    ROUND(SUM(IFF(dow = 2, avg_slots_per_weekday, NULL)), 0) AS TUESDAY_SLOTS,
+    ROUND(SUM(IFF(dow = 3, avg_slots_per_weekday, NULL)), 0) AS WEDNESDAY_SLOTS,
+    ROUND(SUM(IFF(dow = 4, avg_slots_per_weekday, NULL)), 0) AS THURSDAY_SLOTS,
+    ROUND(SUM(IFF(dow = 5, avg_slots_per_weekday, NULL)), 0) AS FRIDAY_SLOTS,
+    ROUND(GREATEST(0, LEAST(100,
+      100 * (1 - (SUM(IFF(dow = 1, avg_slots_per_weekday, NULL)) / NULLIF(MAX(daily_capacity), 0)))
+    )), 1) AS MONDAY_FILL_RATE_PCT,
+    ROUND(GREATEST(0, LEAST(100,
+      100 * (1 - (SUM(IFF(dow = 2, avg_slots_per_weekday, NULL)) / NULLIF(MAX(daily_capacity), 0)))
+    )), 1) AS TUESDAY_FILL_RATE_PCT,
+    ROUND(GREATEST(0, LEAST(100,
+      100 * (1 - (SUM(IFF(dow = 3, avg_slots_per_weekday, NULL)) / NULLIF(MAX(daily_capacity), 0)))
+    )), 1) AS WEDNESDAY_FILL_RATE_PCT,
+    ROUND(GREATEST(0, LEAST(100,
+      100 * (1 - (SUM(IFF(dow = 4, avg_slots_per_weekday, NULL)) / NULLIF(MAX(daily_capacity), 0)))
+    )), 1) AS THURSDAY_FILL_RATE_PCT,
+    ROUND(GREATEST(0, LEAST(100,
+      100 * (1 - (SUM(IFF(dow = 5, avg_slots_per_weekday, NULL)) / NULLIF(MAX(daily_capacity), 0)))
+    )), 1) AS FRIDAY_FILL_RATE_PCT
+  FROM weekday_avg
+  GROUP BY 1
+)
 SELECT
   cm.CLINIC_ID,
   cm.CLINIC_NAME,
@@ -27,13 +92,25 @@ SELECT
   sw.SLOTS_AVAILABLE,
   IFNULL(sw.ESTIMATED_WEEKLY_SLOT_CAPACITY, cm.ESTIMATED_DAILY_SLOT_CAPACITY * 7) AS TOTAL_SLOTS_OFFERED,
   sw.SLOTS_BOOKED,
-  (sw.FILL_RATE_PCT * 100)::INT AS FILL_RATE_PCT
-FROM VET_CLINIC_HOSPITAL.PUBLIC.CLINICS_MASTER cm
+  (sw.FILL_RATE_PCT * 100)::INT AS FILL_RATE_PCT,
+  wm.ESTIMATED_DAILY_SLOT_CAPACITY,
+  wm.MONDAY_SLOTS,
+  wm.TUESDAY_SLOTS,
+  wm.WEDNESDAY_SLOTS,
+  wm.THURSDAY_SLOTS,
+  wm.FRIDAY_SLOTS,
+  wm.MONDAY_FILL_RATE_PCT,
+  wm.TUESDAY_FILL_RATE_PCT,
+  wm.WEDNESDAY_FILL_RATE_PCT,
+  wm.THURSDAY_FILL_RATE_PCT,
+  wm.FRIDAY_FILL_RATE_PCT
+FROM clinic_master cm
 LEFT JOIN VET_CLINIC_HOSPITAL.PUBLIC.SUMMARY_WEEK sw
   ON cm.CLINIC_ID = sw.CLINIC_ID
-WHERE ${COORDINATE_FILTER}
+LEFT JOIN weekday_metrics wm
+  ON wm.CLINIC_ID = cm.CLINIC_ID
+WHERE 1 = 1
 `
-
 const ORDER_BY = 'ORDER BY FILL_RATE_PCT DESC NULLS LAST, cm.CLINIC_NAME';
 
 const CACHE_CONTROL = 's-maxage=120, stale-while-revalidate=300';
@@ -106,6 +183,19 @@ function transformRow(row: Record<string, unknown>): ClinicFeature | null {
       row.APPOINTMENT_LEAD_TIME_HOURS ?? row.appointment_lead_time_hours
     ),
     doctor_count: toNumber(row.DOCTOR_COUNT ?? row.doctor_count),
+    estimated_daily_slot_capacity: toNumber(
+      row.ESTIMATED_DAILY_SLOT_CAPACITY ?? row.estimated_daily_slot_capacity
+    ),
+    monday_slots: toNumber(row.MONDAY_SLOTS ?? row.monday_slots),
+    tuesday_slots: toNumber(row.TUESDAY_SLOTS ?? row.tuesday_slots),
+    wednesday_slots: toNumber(row.WEDNESDAY_SLOTS ?? row.wednesday_slots),
+    thursday_slots: toNumber(row.THURSDAY_SLOTS ?? row.thursday_slots),
+    friday_slots: toNumber(row.FRIDAY_SLOTS ?? row.friday_slots),
+    monday_fill_rate_pct: toNumber(row.MONDAY_FILL_RATE_PCT ?? row.monday_fill_rate_pct),
+    tuesday_fill_rate_pct: toNumber(row.TUESDAY_FILL_RATE_PCT ?? row.tuesday_fill_rate_pct),
+    wednesday_fill_rate_pct: toNumber(row.WEDNESDAY_FILL_RATE_PCT ?? row.wednesday_fill_rate_pct),
+    thursday_fill_rate_pct: toNumber(row.THURSDAY_FILL_RATE_PCT ?? row.thursday_fill_rate_pct),
+    friday_fill_rate_pct: toNumber(row.FRIDAY_FILL_RATE_PCT ?? row.friday_fill_rate_pct),
   } as const;
 
   return {

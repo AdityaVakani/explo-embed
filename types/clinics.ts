@@ -30,6 +30,17 @@ export type ClinicMetrics = {
   phone_number: string | null;
   bms_system: string | null;
   doctor_count: number | null;
+  estimated_daily_slot_capacity: number | null;
+  monday_slots: number | null;
+  tuesday_slots: number | null;
+  wednesday_slots: number | null;
+  thursday_slots: number | null;
+  friday_slots: number | null;
+  monday_fill_rate_pct: number | null;
+  tuesday_fill_rate_pct: number | null;
+  wednesday_fill_rate_pct: number | null;
+  thursday_fill_rate_pct: number | null;
+  friday_fill_rate_pct: number | null;
 };
 
 export type ClinicFeature = {
