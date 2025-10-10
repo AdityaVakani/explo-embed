@@ -187,8 +187,9 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
       fillRateLine,
       'This is an approximation based on estimated clinic capacity.',
     ].join('\n');
-    const borderTone = slotsMissing ? 'border-slate-200' : 'border-indigo-200';
-    const backgroundTone = slotsMissing ? 'bg-slate-50' : 'bg-indigo-50';
+    const isHighlighted = day.key === 'monday' || day.key === 'tuesday';
+    const borderTone = slotsMissing ? 'border-slate-200' : isHighlighted ? 'border-indigo-300' : 'border-slate-200';
+    const backgroundTone = slotsMissing ? 'bg-slate-50' : isHighlighted ? 'bg-indigo-50' : 'bg-white';
     const slotsDisplay = formatNumber(slots);
     const slotValueClasses = slotsMissing ? 'text-slate-400 italic' : 'text-slate-900';
     const slotsLabelTone = slotsMissing ? 'text-slate-400' : 'text-slate-500';
@@ -197,7 +198,7 @@ export function Sidebar({ clinic, loading, error }: SidebarProps) {
       <div
         key={day.key}
         title={tooltip}
-        className={`flex flex-col items-center rounded-md border ${borderTone} ${backgroundTone} px-2.5 py-1.5 text-center text-slate-700 leading-tight shadow-sm transition hover:border-slate-300`}
+        className={`flex flex-col items-center rounded-md border ${borderTone} ${backgroundTone} px-2 py-0.5 text-center text-slate-700 leading-tight shadow-sm transition hover:border-slate-300`}
       >
         <div className="text-[0.55rem] uppercase tracking-[0.25em] text-slate-500">{day.label}</div>
         <div className={`text-sm font-semibold ${slotValueClasses}`}>{slotsDisplay}</div>
